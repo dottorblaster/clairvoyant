@@ -1,9 +1,13 @@
 import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import {
+  type EventRow,
   listDiscoverEvents,
   MAX_DISCOVER_LIMIT,
+  mergeMyEvents,
+  type ParticipatingEventRow,
   sampleWithoutReplacement,
+  sortMyEvents,
 } from '../dist/queries.js'
 
 describe('sampleWithoutReplacement', () => {
@@ -144,5 +148,201 @@ describe('listDiscoverEvents', () => {
     assert.equal(limits[0], 200, 'the candidate pool is bounded')
     // The top-up asks for the clamped request minus what tier one already gave.
     assert.equal(limits[1], MAX_DISCOVER_LIMIT - 2)
+  })
+})
+
+/* ==========================================================================
+   mergeMyEvents and sortMyEvents.
+
+   These encode the rules that the live index forced us to make explicit:
+   duplicate RSVPs with conflicting statuses, authored events the viewer also
+   RSVP'd to, and unrecognised network values.
+   ========================================================================== */
+
+const REF = 'community.lexicon.calendar.rsvp#'
+
+const eventRow = (uri: string, name: string, startsAt: Date | null): EventRow => ({
+  uri,
+  cid: `${uri}#cid`,
+  author_did: 'did:plc:author',
+  name,
+  starts_at: startsAt,
+  ends_at: null,
+  indexed_at: new Date('2026-01-01T00:00:00Z'),
+  raw: { marker: uri },
+})
+
+const participating = (
+  uri: string,
+  name: string,
+  status: string,
+  indexedAt = '2026-01-01T00:00:00Z',
+): ParticipatingEventRow => ({
+  ...eventRow(uri, name, new Date('2026-06-01T12:00:00Z')),
+  rsvp_status: status,
+  rsvp_indexed_at: new Date(indexedAt),
+})
+
+const rolesOf = (events: ReturnType<typeof mergeMyEvents>): Array<[string, string]> =>
+  events.map((event) => [event.uri, event.role])
+
+describe('mergeMyEvents', () => {
+  test('keeps authored events as hosting', () => {
+    const merged = mergeMyEvents([eventRow('at://a', 'Mine', null)], [])
+    assert.deepEqual(rolesOf(merged), [['at://a', 'hosting']])
+  })
+
+  test("adds events the viewer RSVP'd to, with the RSVP role", () => {
+    const merged = mergeMyEvents(
+      [eventRow('at://a', 'Mine', null)],
+      [participating('at://b', 'Theirs', `${REF}going`)],
+    )
+    assert.deepEqual(rolesOf(merged).sort(), [
+      ['at://a', 'hosting'],
+      ['at://b', 'going'],
+    ])
+  })
+
+  test("hosting wins when the viewer also RSVP'd to their own event", () => {
+    const merged = mergeMyEvents(
+      [eventRow('at://a', 'Mine', null)],
+      [participating('at://a', 'Mine', `${REF}going`)],
+    )
+    assert.equal(merged.length, 1)
+    assert.equal(merged[0]?.role, 'hosting')
+  })
+
+  test('collapses duplicate RSVPs to one row per event', () => {
+    const merged = mergeMyEvents(
+      [],
+      [
+        participating('at://b', 'Theirs', `${REF}interested`),
+        participating('at://b', 'Theirs', `${REF}going`),
+      ],
+    )
+    assert.equal(merged.length, 1)
+  })
+
+  test('prefers going over interested, whichever order they arrive in', () => {
+    const goingFirst = mergeMyEvents(
+      [],
+      [
+        participating('at://b', 'Theirs', `${REF}going`),
+        participating('at://b', 'Theirs', `${REF}interested`),
+      ],
+    )
+    const interestedFirst = mergeMyEvents(
+      [],
+      [
+        participating('at://b', 'Theirs', `${REF}interested`),
+        participating('at://b', 'Theirs', `${REF}going`),
+      ],
+    )
+    assert.equal(goingFirst[0]?.role, 'going')
+    assert.equal(interestedFirst[0]?.role, 'going')
+  })
+
+  test('breaks a tie on the most recently indexed RSVP', () => {
+    // Same status, so only `rsvp_indexed_at` can decide. `cid` is the field that
+    // makes the surviving row observable, since the rsvp_* columns are stripped.
+    const older = {
+      ...participating('at://b', 'Theirs', `${REF}going`, '2026-01-01T00:00:00Z'),
+      cid: 'cid-older',
+    }
+    const newer = {
+      ...participating('at://b', 'Theirs', `${REF}going`, '2026-05-01T00:00:00Z'),
+      cid: 'cid-newer',
+    }
+
+    assert.equal(mergeMyEvents([], [older, newer])[0]?.cid, 'cid-newer')
+    assert.equal(mergeMyEvents([], [newer, older])[0]?.cid, 'cid-newer')
+  })
+
+  test('accepts both network spellings of the same status', () => {
+    const refForm = mergeMyEvents([], [participating('at://b', 'Theirs', `${REF}interested`)])
+    const bareForm = mergeMyEvents([], [participating('at://b', 'Theirs', 'interested')])
+    assert.equal(refForm[0]?.role, 'interested')
+    assert.equal(bareForm[0]?.role, 'interested')
+  })
+
+  test('drops an RSVP whose status it does not recognise, rather than guessing', () => {
+    const merged = mergeMyEvents([], [participating('at://b', 'Theirs', 'maybe')])
+    assert.deepEqual(merged, [])
+  })
+
+  test('drops notgoing, which is not something to list under "my events"', () => {
+    const merged = mergeMyEvents([], [participating('at://b', 'Theirs', `${REF}notgoing`)])
+    assert.deepEqual(merged, [])
+  })
+
+  test('strips the rsvp columns and keeps the event row intact', () => {
+    const merged = mergeMyEvents([], [participating('at://b', 'Theirs', `${REF}going`)])
+    const only = merged[0]
+    assert.ok(only !== undefined)
+    assert.deepEqual(only.raw, { marker: 'at://b' })
+    assert.equal(only.cid, 'at://b#cid')
+    assert.ok(!('rsvp_status' in only))
+    assert.ok(!('rsvp_indexed_at' in only))
+  })
+
+  test('handles empty input', () => {
+    assert.deepEqual(mergeMyEvents([], []), [])
+  })
+})
+
+describe('sortMyEvents', () => {
+  const now = new Date('2026-06-15T12:00:00Z')
+  const at = (iso: string): Date => new Date(iso)
+
+  test('orders upcoming soonest-first, then past most-recent-first, then undated', () => {
+    const merged = mergeMyEvents(
+      [
+        eventRow('at://past-old', 'Past old', at('2020-01-01T00:00:00Z')),
+        eventRow('at://soon', 'Soon', at('2026-06-16T00:00:00Z')),
+        eventRow('at://later', 'Later', at('2026-12-01T00:00:00Z')),
+        eventRow('at://past-recent', 'Past recent', at('2026-06-01T00:00:00Z')),
+        eventRow('at://undated', 'Undated', null),
+      ],
+      [],
+    )
+
+    assert.deepEqual(
+      sortMyEvents(merged, now).map((event) => event.uri),
+      ['at://soon', 'at://later', 'at://past-recent', 'at://past-old', 'at://undated'],
+    )
+  })
+
+  test('breaks ties on name so the order is deterministic', () => {
+    const merged = mergeMyEvents(
+      [
+        eventRow('at://b', 'Beta', at('2026-07-01T00:00:00Z')),
+        eventRow('at://a', 'Alpha', at('2026-07-01T00:00:00Z')),
+      ],
+      [],
+    )
+    assert.deepEqual(
+      sortMyEvents(merged, now).map((event) => event.name),
+      ['Alpha', 'Beta'],
+    )
+  })
+
+  test('an event starting exactly now counts as upcoming', () => {
+    const merged = mergeMyEvents([eventRow('at://now', 'Now', now)], [])
+    const sorted = sortMyEvents(merged, now)
+    assert.equal(sorted[0]?.uri, 'at://now')
+  })
+
+  test('does not mutate its input', () => {
+    const merged = mergeMyEvents([eventRow('at://a', 'A', at('2026-07-01T00:00:00Z'))], [])
+    const before = merged.map((event) => event.uri)
+    sortMyEvents(merged, now)
+    assert.deepEqual(
+      merged.map((event) => event.uri),
+      before,
+    )
+  })
+
+  test('handles an empty list', () => {
+    assert.deepEqual(sortMyEvents([], now), [])
   })
 })

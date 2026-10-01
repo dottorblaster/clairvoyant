@@ -26,10 +26,14 @@ const BackLink = ({ toMyEvents }: { toMyEvents: boolean }) => (
   </Link>
 )
 
-/** The index stores RSVP status as a free-form string, so map it defensively. */
-const rsvpTone = (status: string): BadgeTone => {
-  if (status === 'going') return 'ink'
-  if (status === 'notgoing') return 'muted'
+/**
+ * The index stores RSVP status verbatim from the network, so it is either the
+ * bare name or the full ref (`community.lexicon.calendar.rsvp#going`). The API
+ * normalises it into `status_name`; this maps that to a tone.
+ */
+const rsvpTone = (name: RsvpStatus | null): BadgeTone => {
+  if (name === 'going') return 'ink'
+  if (name === 'notgoing') return 'muted'
   return 'default'
 }
 
@@ -224,7 +228,9 @@ export const EventDetailPage = () => {
             {rsvps.map((rsvp) => (
               <li key={rsvp.uri}>
                 <code className="mono">{rsvp.author_did}</code>
-                <Badge tone={rsvpTone(rsvp.status)}>{rsvp.status}</Badge>
+                {/* Falls back to the raw value so an unrecognised status is
+                    shown as-is rather than silently dropped. */}
+                <Badge tone={rsvpTone(rsvp.status_name)}>{rsvp.status_name ?? rsvp.status}</Badge>
               </li>
             ))}
           </ul>

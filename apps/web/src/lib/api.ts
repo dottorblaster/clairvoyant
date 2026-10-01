@@ -62,9 +62,21 @@ export interface RsvpRow {
   cid: string
   author_did: string
   subject_uri: string
+  /** Verbatim network value, e.g. `community.lexicon.calendar.rsvp#going`. */
   status: string
+  /**
+   * Normalised name the UI should render, or `null` when the network sent a
+   * value this lexicon version does not know about.
+   */
+  status_name: RsvpStatus | null
   indexed_at: string
 }
+
+/** How the viewer is connected to an event in their own list. */
+export type MyEventRole = 'hosting' | 'going' | 'interested'
+
+/** An event in "my events": something authored or RSVP'd to, with the role. */
+export type MyEventRow = EventRow & { role: MyEventRole }
 
 export interface MeResponse {
   did: string
@@ -73,8 +85,13 @@ export interface MeResponse {
 
 export const fetchMe = (): Promise<MeResponse> => request<MeResponse>('/api/me')
 
-export const fetchMyEvents = (): Promise<{ events: EventRow[] }> =>
-  request<{ events: EventRow[] }>('/api/me/events')
+/**
+ * Everything the viewer is connected to: events they authored, plus events they
+ * RSVP'd "going" or "interested" to — including RSVPs made from other clients,
+ * since the index is network-wide. Each row carries a `role`.
+ */
+export const fetchMyEvents = (): Promise<{ events: MyEventRow[] }> =>
+  request<{ events: MyEventRow[] }>('/api/me/events')
 
 /**
  * The public discover feed: upcoming events, randomly sampled, topped up with

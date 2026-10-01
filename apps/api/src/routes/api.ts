@@ -5,8 +5,11 @@ import {
   getInviteByTokenHash,
   listDiscoverEvents,
   listEventsByAuthor,
+  listEventsForParticipant,
   listRsvpsForEvent,
   MAX_DISCOVER_LIMIT,
+  mergeMyEvents,
+  sortMyEvents,
 } from '@clairvoyant/db'
 import { EVENT_COLLECTION, RSVP_COLLECTION } from '@clairvoyant/lexicons'
 import { Hono } from 'hono'
@@ -143,8 +146,16 @@ apiRoutes.get('/me/events', async (c) => {
   const did = c.get('did')
   if (!did) return c.json({ error: 'unauthenticated' }, 401)
 
-  const events = await listEventsByAuthor(deps.db, did)
-  return c.json({ events })
+  // Everything the viewer is connected to: events they authored, plus events
+  // they RSVP'd "going" or "interested" to (including RSVPs they made from other
+  // clients, because the index is network-wide). Two independent reads, merged
+  // by a pure function so the dedupe and role rules are unit tested.
+  const [authored, participating] = await Promise.all([
+    listEventsByAuthor(deps.db, did),
+    listEventsForParticipant(deps.db, did),
+  ])
+
+  return c.json({ events: sortMyEvents(mergeMyEvents(authored, participating), new Date()) })
 })
 
 // GET /api/events — the public discover feed.

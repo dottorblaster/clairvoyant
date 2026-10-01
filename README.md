@@ -105,7 +105,7 @@ beyond local use: `openssl rand -base64 48`.
 | GET | `/oauth/callback` | OAuth redirect target; sets the session cookie |
 | POST | `/oauth/logout` | Revoke session + clear cookie |
 | GET | `/api/me` | Current DID/handle |
-| GET | `/api/me/events` | Events authored by the current user (from the index) |
+| GET | `/api/me/events` | Events the current user hosts **or is attending** (authored + RSVP'd), each with a `role` |
 | GET | `/api/events?limit=` | Public discover feed: upcoming events, randomly sampled. No session required |
 | GET | `/api/events/:encodedUri/rsvps` | RSVPs for an event (from the index) |
 | POST | `/api/events` | Create an event record **on the user's PDS** |
@@ -172,6 +172,29 @@ and state. That route is compiled out of production builds.
 See [`packages/ui/README.md`](packages/ui/README.md) for the rationale, the
 component API, the contrast budget and the authoring rules the test suite
 enforces.
+
+## RSVP status has two spellings
+
+The lexicon declares `status` with `knownValues` (advisory, **not** an `enum`), and the indexer stores
+whatever the network sent verbatim. So the live index contains both:
+
+```
+community.lexicon.calendar.rsvp#going       4021
+community.lexicon.calendar.rsvp#interested  1699
+community.lexicon.calendar.rsvp#notgoing     146
+going                                         32
+```
+
+Filtering on the bare name alone therefore matches 32 of 5898 rows and silently drops the rest.
+`packages/db/src/rsvp-status.ts` is the single source of truth for both spellings: the `WHERE status IN
+(...)` list is derived from the same constant as the TypeScript normaliser, so they cannot drift. The
+API keeps the raw `status` for fidelity and adds a normalised `status_name` for the UI.
+
+Two more things the index does that the queries account for: 1005 of those 5898 RSVPs point at events
+that are not in `event` (deleted, or predating the indexer's start sequence), so the join is `INNER`;
+and 80 `(author, event)` pairs hold more than one RSVP record — some disagreeing (`going` +
+`interested`) — so `mergeMyEvents` collapses them, preferring `going` and then the most recently
+indexed record.
 
 ## Remaining things to confirm
 

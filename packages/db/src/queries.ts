@@ -1,8 +1,28 @@
 import type { Kysely, Transaction } from 'kysely'
+import {
+  ATTENDING_RAW_STATUS_VALUES,
+  type AttendingStatusName,
+  isAttendingStatusName,
+  RSVP_STATUS_RANK,
+  rsvpStatusName,
+} from './rsvp-status.js'
 import type { DB } from './schema.js'
 
 export type Db = Kysely<DB>
 export type DbOrTrx = Kysely<DB> | Transaction<DB>
+
+/** A row of the `event` table, as the API hands it to the browser. */
+export interface EventRow {
+  uri: string
+  cid: string
+  author_did: string
+  name: string
+  /** Optional in the lexicon, so this is genuinely nullable. */
+  starts_at: Date | null
+  ends_at: Date | null
+  indexed_at: Date
+  raw: unknown
+}
 
 export interface EventUpsert {
   uri: string
@@ -186,16 +206,151 @@ export const listDiscoverEvents = async (
   return [...picked, ...recent]
 }
 
-export type EventRow = Awaited<ReturnType<typeof listEventsByAuthor>>[number]
+/** An event the viewer RSVP'd to, carrying the raw status of that RSVP. */
+export interface ParticipatingEventRow extends EventRow {
+  /** Verbatim network value, e.g. `community.lexicon.calendar.rsvp#going`. */
+  rsvp_status: string
+  rsvp_indexed_at: Date
+}
+
+/** How the viewer is connected to an event in their own list. */
+export type MyEventRole = 'hosting' | AttendingStatusName
+
+export type MyEvent = EventRow & { role: MyEventRole }
+
+/**
+ * Events the viewer RSVP'd "going" or "interested" to.
+ *
+ * `INNER JOIN` on purpose: 1005 of the live index's 5898 RSVPs point at events
+ * that are not in `event` (the record was deleted, or predates the indexer's
+ * start sequence), and there is nothing to render for those.
+ *
+ * The status filter uses both network spellings, derived from one constant — see
+ * `rsvp-status.ts` for why that matters. It reads `rsvp_author_did_idx` and then
+ * the `event` primary key, so it does not need an index of its own.
+ */
+export const listEventsForParticipant = async (
+  db: DbOrTrx,
+  did: string,
+): Promise<ParticipatingEventRow[]> =>
+  db
+    .selectFrom('rsvp')
+    .innerJoin('event', 'event.uri', 'rsvp.subject_uri')
+    .selectAll('event')
+    .select(['rsvp.status as rsvp_status', 'rsvp.indexed_at as rsvp_indexed_at'])
+    .where('rsvp.author_did', '=', did)
+    .where('rsvp.status', 'in', ATTENDING_RAW_STATUS_VALUES)
+    .execute()
+
+const toEventRow = (row: ParticipatingEventRow): EventRow => ({
+  uri: row.uri,
+  cid: row.cid,
+  author_did: row.author_did,
+  name: row.name,
+  starts_at: row.starts_at,
+  ends_at: row.ends_at,
+  indexed_at: row.indexed_at,
+  raw: row.raw,
+})
+
+/** Stronger commitment first, then the most recently indexed record. */
+const isStrongerRsvp = (
+  candidate: ParticipatingEventRow,
+  incumbent: ParticipatingEventRow,
+): boolean => {
+  const next = rsvpStatusName(candidate.rsvp_status)
+  const current = rsvpStatusName(incumbent.rsvp_status)
+  if (next === null) return false
+  if (current === null) return true
+  if (RSVP_STATUS_RANK[next] !== RSVP_STATUS_RANK[current]) {
+    return RSVP_STATUS_RANK[next] < RSVP_STATUS_RANK[current]
+  }
+  return candidate.rsvp_indexed_at.getTime() > incumbent.rsvp_indexed_at.getTime()
+}
+
+/**
+ * Merges the viewer's authored events with the ones they RSVP'd to.
+ *
+ * Rules, in order:
+ *   1. An authored event is always `hosting`, even if the viewer also RSVP'd to
+ *      it. Hosting beats attending.
+ *   2. One row per event URI. Duplicates are real: 80 `(author, event)` pairs in
+ *      the live index hold more than one RSVP record, and some disagree
+ *      (`going` + `interested` for the same event), so the strongest status wins
+ *      and ties break on the most recently indexed record.
+ *   3. An RSVP whose status is unrecognised is dropped rather than guessed at.
+ */
+export const mergeMyEvents = (
+  authored: readonly EventRow[],
+  participating: readonly ParticipatingEventRow[],
+): MyEvent[] => {
+  const merged = new Map<string, MyEvent>()
+
+  for (const event of authored) {
+    merged.set(event.uri, { ...event, role: 'hosting' })
+  }
+
+  const strongest = new Map<string, { row: ParticipatingEventRow; role: AttendingStatusName }>()
+  for (const row of participating) {
+    const name = rsvpStatusName(row.rsvp_status)
+    if (name === null || !isAttendingStatusName(name)) continue
+
+    const incumbent = strongest.get(row.uri)
+    if (incumbent === undefined || isStrongerRsvp(row, incumbent.row)) {
+      strongest.set(row.uri, { row, role: name })
+    }
+  }
+
+  for (const [uri, entry] of strongest) {
+    // Hosting already claimed this URI, and hosting beats attending.
+    if (merged.has(uri)) continue
+    merged.set(uri, { ...toEventRow(entry.row), role: entry.role })
+  }
+
+  return [...merged.values()]
+}
+
+/**
+ * Display order: upcoming soonest-first, then past most-recent-first, then the
+ * undated ones. The browser splits the same list back into those three sections,
+ * so the order here is what the reader sees.
+ */
+export const sortMyEvents = (events: readonly MyEvent[], now: Date): MyEvent[] => {
+  const cutoff = now.getTime()
+  const upcoming = events.filter(
+    (event) => event.starts_at !== null && event.starts_at.getTime() >= cutoff,
+  )
+  const past = events.filter(
+    (event) => event.starts_at !== null && event.starts_at.getTime() < cutoff,
+  )
+  const undated = events.filter((event) => event.starts_at === null)
+
+  const byStartAsc = (a: MyEvent, b: MyEvent): number =>
+    (a.starts_at?.getTime() ?? 0) - (b.starts_at?.getTime() ?? 0)
+  // A stable tie-break, so the order never depends on the database's whim.
+  const byName = (a: MyEvent, b: MyEvent): number => a.name.localeCompare(b.name)
+
+  return [
+    ...upcoming.sort((a, b) => byStartAsc(a, b) || byName(a, b)),
+    ...past.sort((a, b) => byStartAsc(b, a) || byName(a, b)),
+    ...undated.sort(byName),
+  ]
+}
 
 /** The primary read: "who is going to event X" (uses `rsvp_subject_uri_idx`). */
-export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string) =>
-  db
+export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string) => {
+  const rows = await db
     .selectFrom('rsvp')
     .selectAll()
     .where('subject_uri', '=', subjectUri)
     .orderBy('indexed_at', 'asc')
     .execute()
+
+  // `status` stays verbatim for fidelity; `status_name` is what the UI renders,
+  // because the raw value is either `going` or `…#going` depending on which
+  // client wrote the record.
+  return rows.map((row) => ({ ...row, status_name: rsvpStatusName(row.status) }))
+}
 
 export interface InviteInput {
   /** SHA-256 hash of the invite token; the raw token is never persisted. */
