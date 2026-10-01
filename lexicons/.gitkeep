@@ -1,0 +1,3 @@
+# Raw Lexicon JSON lives here.
+# Installed lexicons are populated by `pnpm lex:install`.
+# Our own lexicons are committed alongside them.

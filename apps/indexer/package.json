@@ -1,0 +1,26 @@
+{
+  "name": "@clairvoyant/indexer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --env-file-if-exists=.env src/index.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node --enable-source-maps --env-file-if-exists=.env dist/index.js",
+    "find-start-seq": "tsx --env-file-if-exists=.env src/scripts/find-start-seq.ts",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "lint": "biome lint ."
+  },
+  "dependencies": {
+    "@bsky/jetstream": "^1.0.0",
+    "@clairvoyant/db": "workspace:*",
+    "@clairvoyant/lexicons": "workspace:*",
+    "kysely": "^0.29.6",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.3",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "@clairvoyant/lexicons",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "lex:install": "lex install community.lexicon.calendar.event community.lexicon.calendar.rsvp --lexicons ../../lexicons",
+    "lex:build": "lex build --lexicons ../../lexicons --out src/generated --index-file --clear",
+    "build": "pnpm lex:build && tsc -p tsconfig.build.json",
+    "typecheck": "pnpm lex:build && tsc -p tsconfig.json --noEmit",
+    "lint": "biome lint ."
+  },
+  "dependencies": {
+    "@atproto/lex": "^0.3.13"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2"
+  }
+}

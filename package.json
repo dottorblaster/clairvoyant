@@ -1,0 +1,29 @@
+{
+  "name": "clairvoyant",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.4.1",
+  "engines": {
+    "node": ">=22.9.0"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "typecheck": "turbo run typecheck",
+    "format": "biome format --write .",
+    "check": "biome check .",
+    "check:fix": "biome check --write .",
+    "update": "pnpm up --latest -r && pnpm install",
+    "lex:install": "pnpm --filter @clairvoyant/lexicons lex:install",
+    "lex:build": "pnpm --filter @clairvoyant/lexicons lex:build",
+    "db:migrate": "pnpm --filter @clairvoyant/db migrate",
+    "db:migrate:down": "pnpm --filter @clairvoyant/db migrate:down"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.5.15",
+    "turbo": "^2.11.6",
+    "typescript": "^7.0.2"
+  }
+}

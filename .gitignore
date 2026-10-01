@@ -1,0 +1,34 @@
+# dependencies
+node_modules/
+.pnpm-store/
+
+# builds
+dist/
+build/
+*.tsbuildinfo
+
+# turborepo
+.turbo/
+
+# generated lexicon bindings (regenerated via `pnpm lex:build`)
+packages/lexicons/src/generated/
+
+# env files
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# editors / os
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
+
+# vite
+apps/web/.vite/
