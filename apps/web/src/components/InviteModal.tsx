@@ -1,5 +1,6 @@
+import { Button, Modal, Notice, TextField } from '@clairvoyant/ui'
 import { useMutation } from '@tanstack/react-query'
-import { type FormEvent, useEffect, useRef, useState } from 'react'
+import { type FormEvent, useRef, useState } from 'react'
 import { createInvite } from '../lib/api'
 
 interface InviteModalProps {
@@ -12,13 +13,16 @@ interface InviteModalProps {
 /**
  * Modal that mints a per-person invite. The recipient's handle is resolved to a
  * DID server-side and baked into the token, so the link only works for them.
+ *
+ * Escape, backdrop dismissal, focus handling and scroll locking all come from
+ * the design system's `Modal`.
  */
 export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) => {
   const [handle, setHandle] = useState('')
   const [inviteeHandle, setInviteeHandle] = useState('')
   const [inviteUrl, setInviteUrl] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
+  const handleInputRef = useRef<HTMLInputElement>(null)
 
   const create = useMutation({
     mutationFn: (value: string) => createInvite(eventUri, value),
@@ -27,15 +31,6 @@ export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) 
       setInviteUrl(`${window.location.origin}${eventPath}?invite=${data.token}`)
     },
   })
-
-  useEffect(() => {
-    inputRef.current?.focus()
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
-    }
-    window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
-  }, [onClose])
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -64,60 +59,51 @@ export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) 
   }
 
   return (
-    <div className="modal-root">
-      <button
-        type="button"
-        className="modal-overlay"
-        aria-label="Close invite dialog"
-        onClick={onClose}
-      />
-      <div className="modal" role="dialog" aria-modal="true" aria-labelledby="invite-modal-title">
-        <div className="modal-header">
-          <h2 id="invite-modal-title">Invite someone</h2>
-          <button type="button" className="modal-close" onClick={onClose} aria-label="Close">
-            ×
-          </button>
-        </div>
+    <Modal title="Invite someone" onClose={onClose} initialFocusRef={handleInputRef}>
+      {inviteUrl === null ? (
+        <form onSubmit={submit} className="stack">
+          <TextField
+            ref={handleInputRef}
+            label="Their handle"
+            value={handle}
+            onChange={(event) => setHandle(event.target.value)}
+            placeholder="alice.bsky.social"
+            autoComplete="off"
+            hint="Resolved to a DID server-side, so the link only works for them."
+            required
+          />
 
-        {inviteUrl ? (
-          <div className="stack">
-            <p>
-              Invite link for <strong>@{inviteeHandle}</strong>. Only they can use it to RSVP.
-            </p>
-            <input
-              aria-label="Invite link"
-              readOnly
-              value={inviteUrl}
-              onFocus={(event) => event.currentTarget.select()}
-            />
-            <button type="button" onClick={copy}>
-              {copied ? 'Copied!' : 'Copy invite link'}
-            </button>
-            <button type="button" onClick={reset}>
-              Invite someone else
-            </button>
+          <div className="cluster">
+            <Button type="submit" variant="primary" pending={create.isPending}>
+              Generate invite link
+            </Button>
           </div>
-        ) : (
-          <form onSubmit={submit} className="stack">
-            <label htmlFor="inviteHandle">Their handle</label>
-            <input
-              id="inviteHandle"
-              ref={inputRef}
-              value={handle}
-              onChange={(event) => setHandle(event.target.value)}
-              placeholder="alice.bsky.social"
-              autoComplete="off"
-              required
-            />
-            <button type="submit" disabled={create.isPending}>
-              {create.isPending ? 'Generating…' : 'Generate invite link'}
-            </button>
-            {create.isError && (
-              <p className="error">Could not create the invite. Check the handle and retry.</p>
-            )}
-          </form>
-        )}
-      </div>
-    </div>
+
+          {create.isError ? (
+            <Notice tone="error">Could not create the invite. Check the handle and retry.</Notice>
+          ) : null}
+        </form>
+      ) : (
+        <div className="stack">
+          <p>
+            Invite link for <strong>@{inviteeHandle}</strong>. Only they can use it to RSVP.
+          </p>
+
+          <TextField
+            label="Invite link"
+            readOnly
+            value={inviteUrl}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+
+          <div className="cluster">
+            <Button variant="primary" icon={copied ? 'check' : undefined} onClick={copy}>
+              {copied ? 'Copied' : 'Copy invite link'}
+            </Button>
+            <Button onClick={reset}>Invite someone else</Button>
+          </div>
+        </div>
+      )}
+    </Modal>
   )
 }

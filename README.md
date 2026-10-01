@@ -63,6 +63,10 @@ pnpm i                 # install workspace dependencies
 pnpm lex:install       # fetch community.lexicon.calendar.{event,rsvp} into ./lexicons
                        #   (writes the committed manifest packages/lexicons/lexicons.json)
 pnpm lex:build         # generate TypeScript bindings into packages/lexicons/src/generated
+pnpm --filter @clairvoyant/ui build
+                       # compile the design system's React primitives into packages/ui/dist
+                       #   (its stylesheet is imported from source, so this is only
+                       #   needed before `pnpm dev`; `pnpm build`/`typecheck` do it for you)
 docker compose up -d   # start Postgres 17
 cp packages/db/.env.example packages/db/.env
 cp apps/api/.env.example apps/api/.env
@@ -84,7 +88,7 @@ beyond local use: `openssl rand -base64 48`.
 
 | Command | Description |
 | --- | --- |
-| `pnpm dev` / `pnpm build` / `pnpm lint` / `pnpm typecheck` | Turborepo tasks |
+| `pnpm dev` / `pnpm build` / `pnpm lint` / `pnpm typecheck` / `pnpm test` | Turborepo tasks |
 | `pnpm lex:install` | `lex install` the community lexicons (writes the manifest) |
 | `pnpm lex:build` | `lex build` generated TypeScript types |
 | `pnpm db:migrate` / `pnpm db:migrate:down` | Kysely migrations |
@@ -112,6 +116,7 @@ beyond local use: `openssl rand -base64 48`.
 ├─ lexicons/                     # raw Lexicon JSON (installed community.* lexicons)
 ├─ packages/
 │  ├─ lexicons/                  # generated Lexicon types from `lex build`
+│  ├─ ui/                        # design system: tokens, CSS layers, React primitives
 │  └─ db/                        # Kysely schema, migrations, typed queries
 ├─ apps/
 │  ├─ api/                       # Hono + BFF OAuth + XRPC
@@ -151,6 +156,21 @@ Dependabot rather than doing this by hand.
 - **`@atproto/lex` is a runtime dependency** of `packages/lexicons` (not a devDependency): the
   generated `dist/**` files `import { l } from '@atproto/lex'` at runtime.
 - **zod 4** is used; the env/route schemas use the v4 top-level formats (`z.url()`, `z.iso.datetime()`).
+
+## UI
+
+The interface is styled by `@clairvoyant/ui` — an 8-bit design system built on the
+Game Boy DMG palette with NES geometry (hard 2px outlines, zero corner radius,
+notched filled shapes, hard offset shadows). It ships one stylesheet and a small
+set of React primitives, has no styling dependencies, and defines both a light
+theme (the DMG screen) and a dark theme (the same screen at night).
+
+In development, <http://127.0.0.1:5173/styleguide> renders every token, component
+and state. That route is compiled out of production builds.
+
+See [`packages/ui/README.md`](packages/ui/README.md) for the rationale, the
+component API, the contrast budget and the authoring rules the test suite
+enforces.
 
 ## Remaining things to confirm
 

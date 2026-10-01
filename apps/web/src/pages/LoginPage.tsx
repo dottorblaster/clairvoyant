@@ -1,3 +1,4 @@
+import { Button, Panel, TextField } from '@clairvoyant/ui'
 import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useMe } from '../lib/useMe'
@@ -17,24 +18,27 @@ export const LoginPage = () => {
   if (me.data) return <Navigate to="/events" replace />
 
   return (
-    <section className="card">
-      <h1>Log in with AT Protocol</h1>
-      <p>Enter your handle (for example, alice.bsky.social).</p>
+    <Panel
+      title="Log in with AT Protocol"
+      meta="Your records stay in your own PDS. This app only ever reads its own index."
+    >
       <form onSubmit={onSubmit} className="stack">
-        <label htmlFor="handle">Handle</label>
-        <input
-          id="handle"
+        <TextField
+          label="Handle"
           name="handle"
           value={handle}
           onChange={(event) => setHandle(event.target.value)}
           placeholder="alice.bsky.social"
           autoComplete="username"
+          hint="For example, alice.bsky.social"
           required
         />
-        <button type="submit" disabled={me.isLoading}>
-          Continue
-        </button>
+        <div className="cluster">
+          <Button type="submit" variant="primary" pending={me.isLoading}>
+            Continue
+          </Button>
+        </div>
       </form>
-    </section>
+    </Panel>
   )
 }

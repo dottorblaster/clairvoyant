@@ -1,0 +1,126 @@
+/* ==========================================================================
+   Clairvoyant UI — utilities
+   A deliberately small set. Anything app-specific belongs in the app.
+   ========================================================================== */
+
+/* Vertical rhythm: put .stack on any container and children space themselves. */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.stack--tight {
+  gap: var(--space-2);
+}
+
+.stack--loose {
+  gap: var(--space-6);
+}
+
+/* Horizontal, wrapping, baseline-aligned row. */
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* Row pushed to the edges — a heading with an action on the right. */
+.split {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.muted {
+  color: var(--fg-muted);
+}
+
+.small {
+  font-size: var(--text-sm);
+}
+
+/* Opaque identifiers (DIDs, AT-URIs) must be allowed to break anywhere. */
+.mono {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+
+.list-reset {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* ==========================================================================
+   Block cursor
+   The 8-bit "busy / you are here" marker. Hard on/off via steps(1), and it
+   stops entirely under prefers-reduced-motion.
+   ========================================================================== */
+
+.cursor-blink::after {
+  content: "\258A";
+  display: inline-block;
+  margin-left: var(--space-1);
+  animation: cursor-blink 1s steps(1, end) infinite;
+}
+
+@keyframes cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-blink::after {
+    animation: none;
+  }
+}
+
+/* ==========================================================================
+   Accessibility
+   ========================================================================== */
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   Opt-in shape
+   ========================================================================== */
+
+.pixel-notch {
+  clip-path: var(--clip-notch);
+}
+
+/* Icons are drawn on a 1-unit grid; keep the edges hard at any scale. */
+.pixel-icon {
+  display: block;
+  flex: none;
+  shape-rendering: crispEdges;
+}
+
+@media (forced-colors: active) {
+  .pixel-notch {
+    clip-path: none;
+  }
+}

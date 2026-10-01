@@ -1,3 +1,4 @@
+import { Badge, type BadgeTone, Button, Loading, Notice, Panel, TextField } from '@clairvoyant/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
@@ -15,6 +16,13 @@ const RESPONSE_LABEL: Record<RsvpStatus, string> = {
   going: 'accepted',
   notgoing: 'declined',
   interested: 'interested',
+}
+
+/** The index stores RSVP status as a free-form string, so map it defensively. */
+const rsvpTone = (status: string): BadgeTone => {
+  if (status === 'going') return 'ink'
+  if (status === 'notgoing') return 'muted'
+  return 'default'
 }
 
 export const EventDetailPage = () => {
@@ -65,20 +73,31 @@ export const EventDetailPage = () => {
 
   if (!eventUri) {
     return (
-      <section className="card">
-        <p className="error">This event link is malformed.</p>
-        <Link to="/events">Back to my events</Link>
-      </section>
+      <Panel title="Event">
+        <Notice tone="error">This event link is malformed.</Notice>
+        <p>
+          <Link to="/events">Back to my events</Link>
+        </p>
+      </Panel>
     )
   }
 
-  if (query.isLoading) return <p>Loading event…</p>
+  if (query.isLoading) {
+    return (
+      <Panel title="Event">
+        <Loading>Loading event</Loading>
+      </Panel>
+    )
+  }
+
   if (query.isError || !query.data) {
     return (
-      <section className="card">
-        <p className="error">This event could not be found.</p>
-        <Link to="/events">Back to my events</Link>
-      </section>
+      <Panel title="Event">
+        <Notice tone="error">This event could not be found.</Notice>
+        <p>
+          <Link to="/events">Back to my events</Link>
+        </p>
+      </Panel>
     )
   }
 
@@ -86,114 +105,145 @@ export const EventDetailPage = () => {
   const info = invite.data
   const isInviteForMe = info?.valid === true && info.matchesViewer === true
 
-  return (
-    <section className="card">
-      {info?.valid && info.inviterHandle && (
-        <p className="muted">
-          {info.inviterHandle} invited you
-          {info.inviteeHandle ? ` as @${info.inviteeHandle}` : ''}
-        </p>
-      )}
-
-      <div className="event-heading">
-        <h1>{event.name}</h1>
-        {me.data && (
-          <button type="button" onClick={() => setInviteOpen(true)}>
-            Invite
-          </button>
-        )}
-      </div>
-      <p className="muted">
-        Starts {new Date(event.starts_at).toLocaleString()}
-        {event.ends_at ? ` · Ends ${new Date(event.ends_at).toLocaleString()}` : ''}
-      </p>
-
-      <h2>RSVPs ({rsvps.length})</h2>
-      {rsvps.length === 0 ? (
-        <p>No RSVPs yet.</p>
-      ) : (
-        <ul className="rsvp-list">
-          {rsvps.map((rsvp) => (
-            <li key={rsvp.uri}>
-              <code>{rsvp.author_did}</code> — <strong>{rsvp.status}</strong>
-            </li>
-          ))}
-        </ul>
-      )}
-
-      <h2>Your response</h2>
-      {response ? (
-        <p>
+  const renderResponse = () => {
+    if (response) {
+      return (
+        <Notice tone="success">
           Thanks — your RSVP was recorded as <strong>{RESPONSE_LABEL[response]}</strong>. It will
           appear in the list once the indexer picks it up.
-        </p>
-      ) : !inviteToken ? (
-        <p className="muted">RSVP is invite-only. Ask someone to send you an invite link.</p>
-      ) : invite.isLoading ? (
-        <p>Checking invite…</p>
-      ) : !info?.valid ? (
-        <p className="error">This invite link is not valid.</p>
-      ) : info.matchesViewer === false ? (
-        <p className="error">
+        </Notice>
+      )
+    }
+
+    if (!inviteToken) {
+      return <p className="muted">RSVP is invite-only. Ask someone to send you an invite link.</p>
+    }
+
+    if (invite.isLoading) return <Loading>Checking invite</Loading>
+
+    if (!info?.valid) {
+      return <Notice tone="error">This invite link is not valid.</Notice>
+    }
+
+    if (info.matchesViewer === false) {
+      return (
+        <Notice tone="error">
           This invite is for @{info.inviteeHandle}. Log in as them to respond.
-        </p>
-      ) : info.matchesViewer === null ? (
+        </Notice>
+      )
+    }
+
+    if (info.matchesViewer === null) {
+      return (
         <form onSubmit={onLogin} className="stack">
           <p>Log in with your handle to respond.</p>
-          <label htmlFor="handle">Your handle</label>
-          <input
-            id="handle"
+          <TextField
+            label="Your handle"
             value={handleInput || info.inviteeHandle || ''}
             onChange={(event) => setHandleInput(event.target.value)}
             placeholder="alice.bsky.social"
             autoComplete="username"
             required
           />
-          <button type="submit">Log in to respond</button>
-        </form>
-      ) : isInviteForMe ? (
-        <div className="stack">
-          <p>
-            Responding as <code>{me.data?.handle ?? me.data?.did}</code>.
-          </p>
-          <div className="invite-actions">
-            <button
-              type="button"
-              onClick={() => respond.mutate('going')}
-              disabled={respond.isPending}
-            >
-              Accept
-            </button>
-            <button
-              type="button"
-              onClick={() => respond.mutate('notgoing')}
-              disabled={respond.isPending}
-            >
-              Decline
-            </button>
-            <button
-              type="button"
-              onClick={() => respond.mutate('interested')}
-              disabled={respond.isPending}
-            >
-              Interested
-            </button>
+          <div className="cluster">
+            <Button type="submit" variant="primary">
+              Log in to respond
+            </Button>
           </div>
-          {respond.isError && <p className="error">Could not save your RSVP. Please retry.</p>}
+        </form>
+      )
+    }
+
+    if (!isInviteForMe) return null
+
+    return (
+      <div className="stack">
+        <p>
+          Responding as <code>{me.data?.handle ?? me.data?.did}</code>.
+        </p>
+        <div className="cluster">
+          <Button
+            variant="primary"
+            icon="check"
+            pending={respond.isPending}
+            onClick={() => respond.mutate('going')}
+          >
+            Accept
+          </Button>
+          <Button
+            icon="cross"
+            pending={respond.isPending}
+            onClick={() => respond.mutate('notgoing')}
+          >
+            Decline
+          </Button>
+          <Button pending={respond.isPending} onClick={() => respond.mutate('interested')}>
+            Interested
+          </Button>
         </div>
+        {respond.isError ? (
+          <Notice tone="error">Could not save your RSVP. Please retry.</Notice>
+        ) : null}
+      </div>
+    )
+  }
+
+  return (
+    <Panel
+      title={event.name}
+      actions={
+        me.data ? (
+          <Button icon="user" onClick={() => setInviteOpen(true)}>
+            Invite
+          </Button>
+        ) : undefined
+      }
+      meta={
+        <>
+          Starts {new Date(event.starts_at).toLocaleString()}
+          {event.ends_at ? ` · Ends ${new Date(event.ends_at).toLocaleString()}` : ''}
+        </>
+      }
+    >
+      {info?.valid && info.inviterHandle ? (
+        <p className="muted">
+          {info.inviterHandle} invited you
+          {info.inviteeHandle ? ` as @${info.inviteeHandle}` : ''}
+        </p>
       ) : null}
+
+      <section className="stack stack--tight">
+        <h2>RSVPs ({rsvps.length})</h2>
+        {rsvps.length === 0 ? (
+          <p className="muted">No RSVPs yet.</p>
+        ) : (
+          <ul className="data-list">
+            {rsvps.map((rsvp) => (
+              <li key={rsvp.uri}>
+                <code className="mono">{rsvp.author_did}</code>
+                <Badge tone={rsvpTone(rsvp.status)}>{rsvp.status}</Badge>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="stack stack--tight">
+        <h2>Your response</h2>
+        {renderResponse()}
+      </section>
 
       <p>
         <Link to="/events">Back to my events</Link>
       </p>
 
-      {inviteOpen && (
+      {inviteOpen ? (
         <InviteModal
           eventUri={eventUri}
           eventPath={eventPath}
           onClose={() => setInviteOpen(false)}
         />
-      )}
-    </section>
+      ) : null}
+    </Panel>
   )
 }

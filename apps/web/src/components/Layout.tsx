@@ -1,5 +1,6 @@
+import { Button, PixelIcon, ThemeToggle } from '@clairvoyant/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Link, Outlet, useNavigate } from 'react-router-dom'
+import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { logout } from '../lib/api'
 import { useMe } from '../lib/useMe'
 
@@ -20,28 +21,44 @@ export const Layout = () => {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <nav className="app-nav">
-          <Link to="/events">My events</Link>
-          <Link to="/create">Create event</Link>
+        <Link to="/events" className="app-brand">
+          <PixelIcon name="calendar" />
+          Clairvoyant
+        </Link>
+
+        <nav className="app-nav" aria-label="Main">
+          <NavLink to="/events" className="nav-link">
+            My events
+          </NavLink>
+          <NavLink to="/create" className="nav-link">
+            Create event
+          </NavLink>
         </nav>
+
         <div className="app-account">
+          <ThemeToggle />
           {me.data ? (
             <>
-              <span title={me.data.did}>{me.data.handle ?? me.data.did}</span>
-              <button
-                type="button"
+              <span className="app-account__identity" title={me.data.did}>
+                {me.data.handle ?? me.data.did}
+              </span>
+              <Button
+                icon="power"
+                pending={logoutMutation.isPending}
                 onClick={() => logoutMutation.mutate()}
-                disabled={logoutMutation.isPending}
               >
                 Log out
-              </button>
+              </Button>
             </>
           ) : (
-            <Link to="/login">Log in</Link>
+            <NavLink to="/login" className="nav-link">
+              Log in
+            </NavLink>
           )}
         </div>
       </header>
-      <main className="app-main">
+
+      <main>
         <Outlet />
       </main>
     </div>

@@ -1,0 +1,15 @@
+/* ==========================================================================
+   Clairvoyant UI — single stylesheet entry point
+   Import this once, from the app's entry module:
+
+     import '@clairvoyant/ui/styles.css'
+
+   Order matters: tokens define the custom properties that everything else
+   consumes, base sets the CRT backdrop, components build on both, and
+   utilities are last so they can override component defaults when composed.
+   ========================================================================== */
+
+@import "./tokens.css";
+@import "./base.css";
+@import "./components.css";
+@import "./utilities.css";

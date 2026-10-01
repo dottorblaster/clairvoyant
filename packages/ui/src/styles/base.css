@@ -1,0 +1,171 @@
+/* ==========================================================================
+   Clairvoyant UI — base layer
+   Reset, the CRT backdrop, and typography defaults.
+   ========================================================================== */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scrollbar-color: var(--border-strong) var(--bg);
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  position: relative;
+  background-color: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-text);
+  font-size: var(--text-md);
+  line-height: var(--leading-normal);
+  /* Monospace ligatures (fi, ->, ==) make code and tabular text lie about how
+     many characters they contain. Off everywhere. */
+  font-variant-ligatures: none;
+  font-feature-settings:
+    "liga" 0,
+    "calt" 0;
+}
+
+/* --- the CRT ---------------------------------------------------------------
+   A fixed scanline comb plus a vignette, painted over the whole viewport. It is
+   decoration: it never takes pointer events and it sits *below* the modal layer
+   so dialogs stay readable. Opt out with `data-scanlines="off"` on <html>. */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-scanlines);
+  pointer-events: none;
+  background-image:
+    repeating-linear-gradient(
+      0deg,
+      var(--scanline) 0,
+      var(--scanline) 1px,
+      transparent 1px,
+      transparent var(--scanline-gap)
+    ),
+    radial-gradient(125% 100% at 50% 50%, transparent 55%, var(--vignette) 100%);
+}
+
+html[data-scanlines="off"] body::after {
+  display: none;
+}
+
+/* --- typography ------------------------------------------------------------
+   No default margins: vertical rhythm is owned by layout utilities (.stack),
+   so a component can be dropped anywhere without inheriting stray gaps. */
+h1,
+h2,
+h3,
+h4,
+p,
+figure,
+blockquote,
+dl,
+dd {
+  margin: 0;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-pixel);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  text-wrap: balance;
+}
+
+h1 {
+  font-size: var(--text-xl);
+}
+
+h2 {
+  font-size: var(--text-lg);
+}
+
+h3,
+h4 {
+  font-size: var(--text-md);
+}
+
+ul,
+ol {
+  margin: 0;
+  padding-left: var(--space-5);
+}
+
+/* --- links -----------------------------------------------------------------
+   Links are always underlined (never colour-only) and invert on hover, which
+   is both the 8-bit convention and a strong hover affordance. */
+a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+a:hover {
+  background-color: var(--fg);
+  color: var(--bg);
+}
+
+/* --- code ------------------------------------------------------------------ */
+code,
+kbd,
+samp {
+  font-family: var(--font-mono);
+  font-size: 0.9375em;
+}
+
+code {
+  padding: 0 var(--space-1);
+  background-color: var(--surface-inset);
+  border: 1px solid var(--border);
+}
+
+/* --- forms ------------------------------------------------------------------
+   `color-scheme` above already flips native chrome (date pickers, scrollbars,
+   caret) per theme; this only polishes the bits that ignore it. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+  color: inherit;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.85;
+}
+
+input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* --- focus ------------------------------------------------------------------
+   A 2px ring pulled 2px off the element, so it never collides with the 2px
+   border. Visible on both themes against every surface. */
+:focus-visible {
+  outline: var(--border-w) solid var(--focus);
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: var(--fg);
+  color: var(--bg);
+}
+
+/* --- reduced motion ---------------------------------------------------------
+   Motion is disabled where it is declared, not with a blanket `!important`
+   override: the system only animates the block cursor (utilities.css) and
+   button transitions (components.css), and both are switched off explicitly.
+   Anything added later must handle prefers-reduced-motion itself. */

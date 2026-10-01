@@ -1,3 +1,4 @@
+import { Loading, Notice, Panel } from '@clairvoyant/ui'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { fetchMyEvents } from '../lib/api'
@@ -17,45 +18,58 @@ export const EventsPage = () => {
     enabled: me.data != null,
   })
 
-  if (me.isLoading) return <p>Loading…</p>
+  if (me.isLoading) {
+    return (
+      <Panel title="My events">
+        <Loading>Checking session</Loading>
+      </Panel>
+    )
+  }
 
   if (!me.data) {
     return (
-      <section className="card">
-        <h1>My events</h1>
+      <Panel title="My events">
         <p>
           You are not logged in. <Link to="/login">Log in with your handle</Link> to see your
           events.
         </p>
-      </section>
+      </Panel>
     )
   }
 
   return (
-    <section className="card">
-      <h1>My events</h1>
-      <p className="muted">
-        Indexed from the network for <code>{me.data.handle ?? me.data.did}</code>.
-      </p>
+    <Panel
+      title="My events"
+      meta={
+        <>
+          Indexed from the network for <code>{me.data.handle ?? me.data.did}</code>.
+        </>
+      }
+    >
+      {events.isLoading ? <Loading>Loading events</Loading> : null}
+      {events.isError ? <Notice tone="error">Could not load events.</Notice> : null}
 
-      {events.isLoading && <p>Loading events…</p>}
-      {events.isError && <p className="error">Could not load events.</p>}
-      {events.data && events.data.events.length === 0 && (
+      {events.data?.events.length === 0 ? (
         <p>
           No events yet. <Link to="/create">Create one</Link>.
         </p>
-      )}
+      ) : null}
 
-      <ul className="event-list">
-        {events.data?.events.map((event) => (
-          <li key={event.uri}>
-            <Link to={`/p/${event.author_did}/e/${event.uri.split('/').pop() ?? ''}`}>
-              {event.name}
-            </Link>
-            <span className="muted"> {formatRange(event.starts_at, event.ends_at)}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
+      {events.data && events.data.events.length > 0 ? (
+        <ul className="data-list">
+          {events.data.events.map((event) => (
+            <li key={event.uri}>
+              <Link
+                className="data-list__link"
+                to={`/p/${event.author_did}/e/${event.uri.split('/').pop() ?? ''}`}
+              >
+                {event.name}
+              </Link>
+              <span className="data-list__meta">{formatRange(event.starts_at, event.ends_at)}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+    </Panel>
   )
 }

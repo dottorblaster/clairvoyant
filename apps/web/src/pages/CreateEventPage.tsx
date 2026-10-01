@@ -1,3 +1,4 @@
+import { Button, Loading, Notice, Panel, TextArea, TextField } from '@clairvoyant/ui'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -56,61 +57,67 @@ export const CreateEventPage = () => {
     mutation.mutate(input)
   }
 
-  if (me.isLoading) return <p>Loading…</p>
+  if (me.isLoading) {
+    return (
+      <Panel title="Create event">
+        <Loading>Checking session</Loading>
+      </Panel>
+    )
+  }
+
   if (!me.data) {
     return (
-      <section className="card">
-        <p>You need to log in before creating an event.</p>
-      </section>
+      <Panel title="Create event">
+        <Notice tone="error">You need to log in before creating an event.</Notice>
+      </Panel>
     )
   }
 
   return (
-    <section className="card">
-      <h1>Create event</h1>
-      <p className="muted">
-        The record is written to your PDS. It appears here once the indexer observes it.
-      </p>
+    <Panel
+      title="Create event"
+      meta="The record is written to your PDS. It appears here once the indexer observes it."
+    >
       <form onSubmit={onSubmit} className="stack">
-        <label htmlFor="name">Name</label>
-        <input
-          id="name"
+        <TextField
+          label="Name"
           value={form.name}
           onChange={(event) => update('name')(event.target.value)}
           required
         />
 
-        <label htmlFor="startsAt">Starts at</label>
-        <input
-          id="startsAt"
+        <TextField
+          label="Starts at"
           type="datetime-local"
           value={form.startsAt}
           onChange={(event) => update('startsAt')(event.target.value)}
           required
         />
 
-        <label htmlFor="endsAt">Ends at (optional)</label>
-        <input
-          id="endsAt"
+        <TextField
+          label="Ends at (optional)"
           type="datetime-local"
           value={form.endsAt}
           onChange={(event) => update('endsAt')(event.target.value)}
         />
 
-        <label htmlFor="description">Description (optional)</label>
-        <textarea
-          id="description"
+        <TextArea
+          label="Description (optional)"
           value={form.description}
           onChange={(event) => update('description')(event.target.value)}
           rows={4}
         />
 
-        <button type="submit" disabled={mutation.isPending}>
-          {mutation.isPending ? 'Creating…' : 'Create event'}
-        </button>
+        <div className="cluster">
+          <Button type="submit" variant="primary" pending={mutation.isPending}>
+            Create event
+          </Button>
+        </div>
 
-        {mutation.isError && <p className="error">Could not create the event. Please retry.</p>}
+        {mutation.isError ? (
+          <Notice tone="error">Could not create the event. Please retry.</Notice>
+        ) : null}
       </form>
-    </section>
+    </Panel>
   )
 }
