@@ -1,6 +1,8 @@
 import { Button, Panel, TextField } from '@clairvoyant/ui'
 import { type FormEvent, useState } from 'react'
 import { Navigate } from 'react-router-dom'
+import { buildLoginUrl, normalizeHandle } from '../lib/handle'
+import { navigateTo } from '../lib/navigate'
 import { useMe } from '../lib/useMe'
 
 export const LoginPage = () => {
@@ -9,10 +11,10 @@ export const LoginPage = () => {
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const trimmed = handle.trim().replace(/^@/, '')
+    const trimmed = normalizeHandle(handle)
     if (!trimmed) return
     // Full-page redirect into the API's OAuth flow; the browser never sees tokens.
-    window.location.assign(`/oauth/login?handle=${encodeURIComponent(trimmed)}`)
+    navigateTo(buildLoginUrl(trimmed))
   }
 
   if (me.data) return <Navigate to="/events" replace />

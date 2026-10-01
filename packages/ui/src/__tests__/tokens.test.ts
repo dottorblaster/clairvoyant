@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { describe, test } from 'node:test'
+import { describe, test } from 'vitest'
 
 /**
  * Tests the stylesheet as data. These are the invariants that are easy to break

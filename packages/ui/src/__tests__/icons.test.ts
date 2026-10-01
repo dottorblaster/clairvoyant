@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
-import { describe, test } from 'node:test'
 import { createElement } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
+import { describe, test } from 'vitest'
 import { ICON_GRIDS, ICON_NAMES, PixelIcon, paintedPixels } from '../../dist/index.js'
 
 const render = (element: Parameters<typeof renderToStaticMarkup>[0]): string =>

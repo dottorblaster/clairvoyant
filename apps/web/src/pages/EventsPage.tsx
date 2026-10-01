@@ -1,25 +1,18 @@
-import { Badge, type BadgeTone, Loading, Notice, Panel } from '@clairvoyant/ui'
+import { Badge, Loading, Notice, Panel } from '@clairvoyant/ui'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
-import { fetchMyEvents, type MyEventRole, type MyEventRow } from '../lib/api'
+import { fetchMyEvents, type MyEventRow } from '../lib/api'
+import { partitionEventsByStart } from '../lib/eventSections'
+import { rkeyFromUri } from '../lib/eventUri'
 import { formatEventWindow } from '../lib/format'
+import { ROLE_TONE } from '../lib/roles'
 import { useMe } from '../lib/useMe'
-
-/** Hosting is the loudest, interested the quietest. */
-const ROLE_TONE: Record<MyEventRole, BadgeTone> = {
-  hosting: 'ink',
-  going: 'default',
-  interested: 'muted',
-}
 
 const EventList = ({ events }: { events: MyEventRow[] }) => (
   <ul className="data-list">
     {events.map((event) => (
       <li key={event.uri}>
-        <Link
-          className="data-list__link"
-          to={`/p/${event.author_did}/e/${event.uri.split('/').pop() ?? ''}`}
-        >
+        <Link className="data-list__link" to={`/p/${event.author_did}/e/${rkeyFromUri(event.uri)}`}>
           {event.name}
         </Link>
         <span className="cluster">
@@ -73,16 +66,7 @@ export const EventsPage = () => {
 
   // The API already ordered these (upcoming soonest-first, then past
   // most-recent-first, then undated), so a single pass in order is enough.
-  const now = new Date()
-  const upcoming: MyEventRow[] = []
-  const past: MyEventRow[] = []
-  const undated: MyEventRow[] = []
-  for (const event of all) {
-    const start = event.starts_at === null ? null : new Date(event.starts_at)
-    if (start === null) undated.push(event)
-    else if (start >= now) upcoming.push(event)
-    else past.push(event)
-  }
+  const { upcoming, past, undated } = partitionEventsByStart(all, new Date())
 
   return (
     <Panel

@@ -17,17 +17,17 @@ import { createJetstreamClient, fetchSealedTipSeq, type JetstreamClient } from '
  */
 
 const DAY_MS = 86_400_000
-const DEFAULT_AGE_MS = 365 * DAY_MS
-const WINDOW_SEQ = 2_000_000
-const MAX_SAMPLE_ATTEMPTS = 6
-const MAX_ITERATIONS = 64
+export const DEFAULT_AGE_MS = 365 * DAY_MS
+export const WINDOW_SEQ = 2_000_000
+export const MAX_SAMPLE_ATTEMPTS = 6
+export const MAX_ITERATIONS = 64
 
-interface Sample {
+export interface Sample {
   seq: number
   timeMs: number
 }
 
-const parseAgeMs = (raw: string): number => {
+export const parseAgeMs = (raw: string): number => {
   const match = /^(\d+)(mo|y|w|d|h|m|s)$/.exec(raw.trim())
   const amountRaw = match?.[1]
   const unit = match?.[2]
@@ -48,7 +48,11 @@ const parseAgeMs = (raw: string): number => {
   return amount * (multipliers[unit] ?? DAY_MS)
 }
 
-const parseTargetMs = (argv: readonly string[]): number => {
+/**
+ * Resolve the target instant from CLI arguments. `now` is injectable so the
+ * `--age`/default branches are deterministic in tests.
+ */
+export const parseTargetMs = (argv: readonly string[], now: number = Date.now()): number => {
   const sinceIdx = argv.indexOf('--since')
   const ageIdx = argv.indexOf('--age')
 
@@ -63,7 +67,7 @@ const parseTargetMs = (argv: readonly string[]): number => {
   if (ageIdx !== -1) {
     const value = argv[ageIdx + 1]
     if (!value) throw new Error('--age requires a duration, e.g. 1y')
-    return Date.now() - parseAgeMs(value)
+    return now - parseAgeMs(value)
   }
 
   const positional = argv.find((arg) => !arg.startsWith('--'))
@@ -73,10 +77,10 @@ const parseTargetMs = (argv: readonly string[]): number => {
     return parsed
   }
 
-  return Date.now() - DEFAULT_AGE_MS
+  return now - DEFAULT_AGE_MS
 }
 
-const sampleAt = async (client: JetstreamClient, seq: number): Promise<Sample> => {
+export const sampleAt = async (client: JetstreamClient, seq: number): Promise<Sample> => {
   let window = WINDOW_SEQ
 
   for (let attempt = 0; attempt < MAX_SAMPLE_ATTEMPTS; attempt++) {
@@ -96,7 +100,7 @@ const sampleAt = async (client: JetstreamClient, seq: number): Promise<Sample> =
   throw new Error(`No events found after seq ${seq} within ${window} sequences`)
 }
 
-const findSeqAt = async (
+export const findSeqAt = async (
   client: JetstreamClient,
   tipSeq: number,
   targetMs: number,
@@ -148,7 +152,9 @@ const main = async (): Promise<void> => {
   console.log(`INDEXER_START_SEQ=${seq}`)
 }
 
-main().catch((error: unknown) => {
-  console.error(error instanceof Error ? error.message : error)
-  process.exit(1)
-})
+if (import.meta.main) {
+  main().catch((error: unknown) => {
+    console.error(error instanceof Error ? error.message : error)
+    process.exit(1)
+  })
+}

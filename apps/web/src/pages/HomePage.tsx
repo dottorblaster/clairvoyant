@@ -2,6 +2,7 @@ import { Loading, Notice, Panel } from '@clairvoyant/ui'
 import { useQuery } from '@tanstack/react-query'
 import { Link } from 'react-router-dom'
 import { fetchDiscoverEvents } from '../lib/api'
+import { rkeyFromUri } from '../lib/eventUri'
 import { formatEventStart } from '../lib/format'
 import { useMe } from '../lib/useMe'
 
@@ -41,7 +42,7 @@ export const HomePage = () => {
             <li key={event.uri}>
               <Link
                 className="data-list__link"
-                to={`/p/${event.author_did}/e/${event.uri.split('/').pop() ?? ''}`}
+                to={`/p/${event.author_did}/e/${rkeyFromUri(event.uri)}`}
               >
                 {event.name}
               </Link>

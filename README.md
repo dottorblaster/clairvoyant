@@ -92,8 +92,35 @@ beyond local use: `openssl rand -base64 48`.
 | `pnpm lex:install` | `lex install` the community lexicons (writes the manifest) |
 | `pnpm lex:build` | `lex build` generated TypeScript types |
 | `pnpm db:migrate` / `pnpm db:migrate:down` | Kysely migrations |
+| `pnpm test:integration` | The Postgres-backed suites (needs `TEST_DATABASE_URL`) |
+| `pnpm test:coverage` | Coverage for every package |
 | `pnpm update` | Bump every workspace dependency to its latest version and reinstall |
 | `pnpm check` / `pnpm check:fix` | Biome lint + format + import sorting |
+
+### Testing
+
+Non-DOM packages (`db`, `lexicons`, `api`, `indexer`) use Node's built-in test runner;
+the two React packages (`web`, `ui`) use Vitest + jsdom + Testing Library. API routes are
+exercised through Hono's `app.request()` against fake `Store`/`PdsPort` ports, and the
+indexer run loop takes an injected stream, clock and exit.
+
+```bash
+pnpm test                 # everything; Postgres suites skip without a database
+pnpm test:integration     # only the Postgres suites
+```
+
+Integration tests need a throwaway database and are skipped when `TEST_DATABASE_URL` is
+unset:
+
+```bash
+docker compose up -d
+createdb clairvoyant_test
+export TEST_DATABASE_URL=postgres://app:app@localhost:5432/clairvoyant_test
+pnpm test:integration
+```
+
+See [`docs/TESTING.md`](docs/TESTING.md) for the full inventory, the testability seams
+and how the isolated test databases work.
 
 ### API endpoints
 

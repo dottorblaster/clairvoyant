@@ -19,12 +19,15 @@
     "lex:build": "lex build --lexicons ../../lexicons --out src/generated --index-file --clear",
     "build": "pnpm lex:build && tsc -p tsconfig.build.json",
     "typecheck": "pnpm lex:build && tsc -p tsconfig.json --noEmit",
+    "test": "pnpm lex:build && tsc -p tsconfig.build.json && node --test \"src/**/*.test.ts\"",
+    "test:coverage": "pnpm lex:build && tsc -p tsconfig.build.json && node --test --experimental-test-coverage \"src/**/*.test.ts\"",
     "lint": "biome lint ."
   },
   "dependencies": {
     "@atproto/lex": "^0.3.13"
   },
   "devDependencies": {
+    "@types/node": "^26.6.3",
     "typescript": "^7.0.2"
   }
 }

@@ -2,6 +2,7 @@ import { Button, Modal, Notice, TextField } from '@clairvoyant/ui'
 import { useMutation } from '@tanstack/react-query'
 import { type FormEvent, useRef, useState } from 'react'
 import { createInvite } from '../lib/api'
+import { buildInviteUrl, normalizeHandle } from '../lib/handle'
 
 interface InviteModalProps {
   eventUri: string
@@ -28,13 +29,13 @@ export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) 
     mutationFn: (value: string) => createInvite(eventUri, value),
     onSuccess: (data) => {
       setInviteeHandle(data.inviteeHandle)
-      setInviteUrl(`${window.location.origin}${eventPath}?invite=${data.token}`)
+      setInviteUrl(buildInviteUrl(window.location.origin, eventPath, data.token))
     },
   })
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const value = handle.trim().replace(/^@/, '')
+    const value = normalizeHandle(handle)
     if (value) create.mutate(value)
   }
 

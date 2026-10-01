@@ -1,23 +1,15 @@
-import { Badge, type BadgeTone, Button, Loading, Notice, Panel, TextField } from '@clairvoyant/ui'
+import { Badge, Button, Loading, Notice, Panel, TextField } from '@clairvoyant/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { InviteModal } from '../components/InviteModal'
-import {
-  EVENT_COLLECTION,
-  fetchEventRsvps,
-  fetchInvite,
-  type RsvpStatus,
-  respondToEvent,
-} from '../lib/api'
+import { fetchEventRsvps, fetchInvite, type RsvpStatus, respondToEvent } from '../lib/api'
+import { buildEventPath, buildEventUri } from '../lib/eventUri'
 import { formatEventWindow } from '../lib/format'
+import { buildLoginUrl, normalizeHandle } from '../lib/handle'
+import { currentReturnTo, navigateTo } from '../lib/navigate'
+import { RESPONSE_LABEL, rsvpTone } from '../lib/roles'
 import { useMe } from '../lib/useMe'
-
-const RESPONSE_LABEL: Record<RsvpStatus, string> = {
-  going: 'accepted',
-  notgoing: 'declined',
-  interested: 'interested',
-}
 
 /** Where "back" goes depends on how the visitor got here: discover or their own list. */
 const BackLink = ({ toMyEvents }: { toMyEvents: boolean }) => (
@@ -26,26 +18,16 @@ const BackLink = ({ toMyEvents }: { toMyEvents: boolean }) => (
   </Link>
 )
 
-/**
- * The index stores RSVP status verbatim from the network, so it is either the
- * bare name or the full ref (`community.lexicon.calendar.rsvp#going`). The API
- * normalises it into `status_name`; this maps that to a tone.
- */
-const rsvpTone = (name: RsvpStatus | null): BadgeTone => {
-  if (name === 'going') return 'ink'
-  if (name === 'notgoing') return 'muted'
-  return 'default'
-}
-
 export const EventDetailPage = () => {
   const params = useParams<{ did: string; rkey: string }>()
   const [searchParams] = useSearchParams()
 
   // Human-readable URL: /p/<author-did>/e/<event-rkey> reconstructed back into
   // the AT-URI the API and indexer work with.
-  const canBuildEvent = Boolean(params.did && params.rkey)
-  const eventUri = canBuildEvent ? `at://${params.did}/${EVENT_COLLECTION}/${params.rkey}` : ''
-  const eventPath = canBuildEvent ? `/p/${params.did}/e/${params.rkey}` : ''
+  const did = params.did
+  const rkey = params.rkey
+  const eventUri = did && rkey ? buildEventUri(did, rkey) : ''
+  const eventPath = did && rkey ? buildEventPath(did, rkey) : ''
   const inviteToken = searchParams.get('invite')
 
   const me = useMe()
@@ -76,11 +58,8 @@ export const EventDetailPage = () => {
 
   const onLogin = (submitEvent: FormEvent<HTMLFormElement>) => {
     submitEvent.preventDefault()
-    const returnTo = window.location.pathname + window.location.search
-    const handle = handleInput.trim() || invite.data?.inviteeHandle || ''
-    window.location.assign(
-      `/oauth/login?handle=${encodeURIComponent(handle)}&return_to=${encodeURIComponent(returnTo)}`,
-    )
+    const handle = normalizeHandle(handleInput) || invite.data?.inviteeHandle || ''
+    navigateTo(buildLoginUrl(handle, currentReturnTo()))
   }
 
   if (!eventUri) {

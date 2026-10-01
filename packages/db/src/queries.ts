@@ -1,12 +1,13 @@
-import type { Kysely, Transaction } from 'kysely'
+import type { Kysely, Selectable, Transaction } from 'kysely'
 import {
   ATTENDING_RAW_STATUS_VALUES,
   type AttendingStatusName,
   isAttendingStatusName,
   RSVP_STATUS_RANK,
+  type RsvpStatusName,
   rsvpStatusName,
 } from './rsvp-status.js'
-import type { DB } from './schema.js'
+import type { DB, InviteTable, RsvpTable } from './schema.js'
 
 export type Db = Kysely<DB>
 export type DbOrTrx = Kysely<DB> | Transaction<DB>
@@ -337,8 +338,11 @@ export const sortMyEvents = (events: readonly MyEvent[], now: Date): MyEvent[] =
   ]
 }
 
+/** A row of the `rsvp` table plus the normalised status the UI renders. */
+export type RsvpRow = Selectable<RsvpTable> & { status_name: RsvpStatusName | null }
+
 /** The primary read: "who is going to event X" (uses `rsvp_subject_uri_idx`). */
-export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string) => {
+export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string): Promise<RsvpRow[]> => {
   const rows = await db
     .selectFrom('rsvp')
     .selectAll()
@@ -377,5 +381,11 @@ export const createInvite = async (db: DbOrTrx, input: InviteInput): Promise<voi
     .execute()
 }
 
-export const getInviteByTokenHash = async (db: DbOrTrx, tokenHash: string) =>
+export const getInviteByTokenHash = async (
+  db: DbOrTrx,
+  tokenHash: string,
+): Promise<InviteRow | undefined> =>
   db.selectFrom('invite').selectAll().where('token_hash', '=', tokenHash).executeTakeFirst()
+
+/** A row of the `invite` table as selected (not the insert shape). */
+export type InviteRow = Selectable<InviteTable>

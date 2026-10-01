@@ -1,24 +1,15 @@
 import type { TypedEvent } from '@bsky/jetstream'
-import {
-  type DB,
-  deleteAllByDid,
-  deleteEventByUri,
-  deleteRsvpByUri,
-  upsertEvent,
-  upsertRsvp,
-  writeCursor,
-} from '@clairvoyant/db'
 import { EVENT_COLLECTION, RSVP_COLLECTION } from '@clairvoyant/lexicons'
-import type { Kysely, Transaction } from 'kysely'
 import type { Logger } from './logger.js'
 import { parseEventRecord, parseRsvpRecord } from './records.js'
+import type { ProjectorStore, ProjectorTransaction } from './store.js'
 import { isValidEventRecord, isValidRsvpRecord } from './validate.js'
 
 type CommitEvent = Extract<TypedEvent, { kind: 'commit' }>
 type AccountEvent = Extract<TypedEvent, { kind: 'account' }>
 
 export interface EventHandlerDeps {
-  db: Kysely<DB>
+  store: ProjectorStore
   log: Logger
 }
 
@@ -26,7 +17,7 @@ const atUri = (did: string, collection: string, rkey: string): string =>
   `at://${did}/${collection}/${rkey}`
 
 const handleCommit = async (
-  trx: Transaction<DB>,
+  trx: ProjectorTransaction,
   event: CommitEvent,
   deps: EventHandlerDeps,
 ): Promise<void> => {
@@ -38,8 +29,8 @@ const handleCommit = async (
   const uri = atUri(event.did, collection, rkey)
 
   if (operation === 'delete') {
-    if (collection === EVENT_COLLECTION) await deleteEventByUri(trx, uri)
-    else await deleteRsvpByUri(trx, uri)
+    if (collection === EVENT_COLLECTION) await trx.deleteEventByUri(uri)
+    else await trx.deleteRsvpByUri(uri)
     return
   }
 
@@ -56,7 +47,7 @@ const handleCommit = async (
       deps.log.warn('skipping event record with unparseable fields', { uri })
       return
     }
-    await upsertEvent(trx, {
+    await trx.upsertEvent({
       uri,
       cid: commit.cid,
       authorDid: event.did,
@@ -80,7 +71,7 @@ const handleCommit = async (
     return
   }
 
-  await upsertRsvp(trx, {
+  await trx.upsertRsvp({
     uri,
     cid: commit.cid,
     authorDid: event.did,
@@ -90,12 +81,12 @@ const handleCommit = async (
 }
 
 const handleAccount = async (
-  trx: Transaction<DB>,
+  trx: ProjectorTransaction,
   { account: { active, status }, did }: AccountEvent,
   { log }: EventHandlerDeps,
 ): Promise<void> => {
   if (active === false && status === 'deleted') {
-    await deleteAllByDid(trx, did)
+    await trx.deleteAllByDid(did)
     log.info('removed all derived rows for deleted account', { did })
     return
   }
@@ -106,7 +97,7 @@ const handleAccount = async (
 export const createProjector =
   (deps: EventHandlerDeps) =>
   async (event: TypedEvent): Promise<void> => {
-    await deps.db.transaction().execute(async (trx) => {
+    await deps.store.transaction(async (trx) => {
       switch (event.kind) {
         case 'commit':
           await handleCommit(trx, event, deps)
@@ -116,7 +107,7 @@ export const createProjector =
           break
         case 'sync':
           // A `sync` event means the account's repo was (re)synced; prior projected rows may be stale
-          await deleteAllByDid(trx, event.did)
+          await trx.deleteAllByDid(event.did)
           deps.log.info('cleared derived rows for synced account', { did: event.did })
           break
         case 'identity':
@@ -125,6 +116,6 @@ export const createProjector =
           break
       }
 
-      await writeCursor(trx, event.seq)
+      await trx.writeCursor(event.seq)
     })
   }

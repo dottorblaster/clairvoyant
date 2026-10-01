@@ -187,8 +187,8 @@ so it stays crisp at any multiple of 8.
 pnpm --filter @clairvoyant/ui test   # or: pnpm test  (turbo, from the root)
 ```
 
-Tests use Node's built-in runner with no test dependencies. There is no DOM
-available, so the suite covers:
+Tests run under [Vitest](https://vitest.dev). The static suites use the `node`
+environment (no DOM) and cover:
 
 - **Render output** — `renderToStaticMarkup` over every component: ARIA wiring,
   variant classes, disabled/busy states, label association, heading levels.
@@ -200,17 +200,18 @@ available, so the suite covers:
   nothing is rounded; shadows are sanctioned; the CRT overlay is subtle and
   cannot intercept clicks; and every text/outline pair is **contrast-checked**.
 
-**Tests import the compiled `dist/`, not `src/`.** Two reasons: Node cannot parse
-`.tsx`, and testing the built artifact catches the most likely failure of a
-NodeNext library — a missing `.js` extension in an emitted import. `pnpm test`
-builds first, so the suite never runs against a stale `dist/`.
+The `src/__tests__/interaction/*.test.tsx` suites opt into jsdom with a
+`// @vitest-environment jsdom` docblock and cover the live-DOM behaviour:
 
-**Not covered:** anything requiring a live DOM. There are no interaction tests for
-Escape-to-close, focus restoration, the clipboard write in the invite flow, or the
-theme toggle's `matchMedia` listener. Those need `jsdom` and a DOM testing
-library, which is a real dependency decision rather than something to smuggle in.
-The mitigation is that such logic is pushed into pure functions wherever it
-matters, which is why `theme.ts` is separate from `ThemeToggle`.
+- **Modal** — Escape and backdrop dismissal, the close control, body scroll lock
+  and restore, initial focus and focus restoration on unmount.
+- **ThemeToggle** — the auto → light → dark cycle, `localStorage` persistence,
+  `data-theme` painting, and the `matchMedia` listener lifecycle.
+
+**Tests import the compiled `dist/`, not `src/`.** Testing the built artifact
+catches the most likely failure of a NodeNext library — a missing `.js`
+extension in an emitted import. `pnpm test` builds first, so the suite never runs
+against a stale `dist/`.
 
 ---
 

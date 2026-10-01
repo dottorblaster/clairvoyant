@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createEvent } from '../lib/api'
+import { buildEventPath, parseEventUri } from '../lib/eventUri'
 import { useMe } from '../lib/useMe'
 
 interface FormState {
@@ -30,10 +31,8 @@ export const CreateEventPage = () => {
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['my-events'] })
       // at://<did>/<collection>/<rkey> -> readable /p/<did>/e/<rkey>
-      const parts = result.uri.replace(/^at:\/\//, '').split('/')
-      const did = parts[0]
-      const rkey = parts[2]
-      navigate(did && rkey ? `/p/${did}/e/${rkey}` : '/events')
+      const parsed = parseEventUri(result.uri)
+      navigate(parsed ? buildEventPath(parsed.did, parsed.rkey) : '/events')
     },
   })
 

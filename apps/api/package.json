@@ -8,6 +8,9 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node --enable-source-maps --env-file-if-exists=.env dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "tsc -p tsconfig.build.json && node --test \"src/**/*.test.ts\"",
+    "test:integration": "tsc -p tsconfig.build.json && node --test \"src/**/*.integration.test.ts\"",
+    "test:coverage": "tsc -p tsconfig.build.json && node --test --experimental-test-coverage \"src/**/*.test.ts\"",
     "lint": "biome lint ."
   },
   "dependencies": {

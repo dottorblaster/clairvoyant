@@ -9,6 +9,10 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./testing": {
+      "types": "./dist/testing/test-db.d.ts",
+      "import": "./dist/testing/test-db.js"
     }
   },
   "files": [
@@ -18,6 +22,8 @@
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.build.json && tsc -p tsconfig.json --noEmit",
     "test": "tsc -p tsconfig.build.json && node --test \"src/**/*.test.ts\"",
+    "test:integration": "tsc -p tsconfig.build.json && node --test \"src/**/*.integration.test.ts\"",
+    "test:coverage": "tsc -p tsconfig.build.json && node --test --experimental-test-coverage \"src/**/*.test.ts\"",
     "lint": "biome lint .",
     "migrate": "tsx --env-file-if-exists=.env src/migrate.ts up",
     "migrate:down": "tsx --env-file-if-exists=.env src/migrate.ts down"
