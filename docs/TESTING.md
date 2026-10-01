@@ -79,3 +79,18 @@ database or browser:
 
 `pnpm test:coverage` reports coverage; it is not wired to a threshold yet. Rough
 baselines: `packages/db` ~96% lines, `apps/web` ~97% lines / ~86% branches.
+
+## Continuous integration
+
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml) runs, for every push to
+`main` and every pull request, on a Node 22/24 matrix:
+
+1. `pnpm install --frozen-lockfile`
+2. `pnpm check` (Biome lint + format + import order)
+3. `pnpm build` (generates the Lexicon bindings and builds every package)
+4. `pnpm typecheck`
+5. `pnpm test` (unit; the Postgres suites skip because `TEST_DATABASE_URL` is unset)
+6. `pnpm test:integration` with a `postgres:17` service and `TEST_DATABASE_URL` set
+
+The Lexicon manifest and raw JSON are committed, so `lex:build` runs offline and no
+`lex:install` step is needed.

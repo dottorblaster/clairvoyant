@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: CI only reads the repository.
+permissions:
+  contents: read
+
+# Cancel a superseded run when a branch is pushed again.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  TURBO_TELEMETRY_DISABLED: '1'
+
+jobs:
+  build-and-test:
+    name: build & test (node ${{ matrix.node }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      # Report every supported Node version even if one fails.
+      fail-fast: false
+      matrix:
+        # package.json declares engines.node >=22.9.0; the entry-point guards use
+        # `import.meta.main`, which landed in Node 22.18.0.
+        node: ['22', '24']
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: app
+          POSTGRES_DB: clairvoyant_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U app -d clairvoyant_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        # Reads the pinned `packageManager` from package.json.
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint, format and import order
+        run: pnpm check
+
+      - name: Build
+        # Turbo builds dependencies first, generates the Lexicon bindings and
+        # compiles every package, including the Vite production build of the SPA.
+        run: pnpm build
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Unit tests
+        # Postgres-backed suites skip themselves while TEST_DATABASE_URL is unset.
+        run: pnpm test
+
+      - name: Integration tests (Postgres)
+        run: pnpm test:integration
+        env:
+          TEST_DATABASE_URL: postgres://app:app@localhost:5432/clairvoyant_test
