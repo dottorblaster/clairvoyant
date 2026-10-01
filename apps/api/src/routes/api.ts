@@ -3,8 +3,10 @@ import {
   createInvite,
   getEventByUri,
   getInviteByTokenHash,
+  listDiscoverEvents,
   listEventsByAuthor,
   listRsvpsForEvent,
+  MAX_DISCOVER_LIMIT,
 } from '@clairvoyant/db'
 import { EVENT_COLLECTION, RSVP_COLLECTION } from '@clairvoyant/lexicons'
 import { Hono } from 'hono'
@@ -40,6 +42,18 @@ const RsvpRequestSchema = z.object({
 
 const CreateInviteSchema = z.object({
   handle: z.string().min(1).max(256),
+})
+
+/** How many events the discover feed returns when the caller does not ask. */
+const DEFAULT_DISCOVER_LIMIT = 6
+
+/**
+ * `?limit=`. Digits only, so the `Number()` conversion below cannot yield NaN;
+ * keeping it a string schema also means a missing parameter stays `undefined`
+ * rather than being coerced.
+ */
+const DiscoverQuerySchema = z.object({
+  limit: z.string().regex(/^\d+$/).optional(),
 })
 
 /**
@@ -130,6 +144,33 @@ apiRoutes.get('/me/events', async (c) => {
   if (!did) return c.json({ error: 'unauthenticated' }, 401)
 
   const events = await listEventsByAuthor(deps.db, did)
+  return c.json({ events })
+})
+
+// GET /api/events — the public discover feed.
+//
+// Deliberately unauthenticated: this is how a visitor with no account finds
+// something to open. Every row is a projection of a public AT Protocol record,
+// and the event detail route is public for the same reason, so this exposes
+// nothing that is not already readable from the network. Note that the index
+// covers the whole collection network-wide, not just this app's users.
+apiRoutes.get('/events', async (c) => {
+  const deps = c.get('deps')
+
+  const parsed = DiscoverQuerySchema.safeParse({ limit: c.req.query('limit') })
+  if (!parsed.success) {
+    return c.json({ error: 'invalid_request', message: 'limit must be a positive integer' }, 400)
+  }
+
+  const limit = parsed.data.limit === undefined ? DEFAULT_DISCOVER_LIMIT : Number(parsed.data.limit)
+  if (limit < 1 || limit > MAX_DISCOVER_LIMIT) {
+    return c.json(
+      { error: 'invalid_request', message: `limit must be between 1 and ${MAX_DISCOVER_LIMIT}` },
+      400,
+    )
+  }
+
+  const events = await listDiscoverEvents(deps.db, { limit })
   return c.json({ events })
 })
 

@@ -4,6 +4,7 @@ import { Layout } from './components/Layout'
 import { CreateEventPage } from './pages/CreateEventPage'
 import { EventDetailPage } from './pages/EventDetailPage'
 import { EventsPage } from './pages/EventsPage'
+import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 
 // The style guide is a development tool. `import.meta.env.DEV` is replaced with
@@ -15,7 +16,7 @@ const StyleGuidePage = import.meta.env.DEV ? lazy(() => import('./pages/StyleGui
 export const App = () => (
   <Routes>
     <Route element={<Layout />}>
-      <Route index element={<EventsPage />} />
+      <Route index element={<HomePage />} />
       <Route path="login" element={<LoginPage />} />
       <Route path="events" element={<EventsPage />} />
       <Route path="p/:did/e/:rkey" element={<EventDetailPage />} />

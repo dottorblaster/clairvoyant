@@ -21,12 +21,15 @@ export const Layout = () => {
   return (
     <div className="app-shell">
       <header className="app-header">
-        <Link to="/events" className="app-brand">
+        <Link to="/" className="app-brand">
           <PixelIcon name="calendar" />
           Clairvoyant
         </Link>
 
         <nav className="app-nav" aria-label="Main">
+          <NavLink to="/" end className="nav-link">
+            Discover
+          </NavLink>
           <NavLink to="/events" className="nav-link">
             My events
           </NavLink>

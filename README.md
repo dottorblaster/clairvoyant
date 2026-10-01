@@ -106,6 +106,7 @@ beyond local use: `openssl rand -base64 48`.
 | POST | `/oauth/logout` | Revoke session + clear cookie |
 | GET | `/api/me` | Current DID/handle |
 | GET | `/api/me/events` | Events authored by the current user (from the index) |
+| GET | `/api/events?limit=` | Public discover feed: upcoming events, randomly sampled. No session required |
 | GET | `/api/events/:encodedUri/rsvps` | RSVPs for an event (from the index) |
 | POST | `/api/events` | Create an event record **on the user's PDS** |
 

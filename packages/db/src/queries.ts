@@ -105,6 +105,89 @@ export const listEventsByAuthor = async (db: DbOrTrx, did: string) =>
     .orderBy('starts_at', 'asc')
     .execute()
 
+/** Upper bound on `listDiscoverEvents`, shared with the API's query validation. */
+export const MAX_DISCOVER_LIMIT = 24
+
+export interface DiscoverEventsOptions {
+  limit: number
+  /**
+   * How many of the soonest upcoming events are candidates for the random pick.
+   * Bounds the work so a random sample never has to consider the whole index.
+   */
+  candidatePool?: number
+}
+
+/**
+ * Partial Fisher-Yates: shuffles in place and returns the first `count` items.
+ * Exported because it is the only non-trivial logic in the discover query and it
+ * can be tested without a database.
+ */
+export const sampleWithoutReplacement = <T>(items: readonly T[], count: number): T[] => {
+  const shuffled = items.slice()
+  const wanted = Math.max(0, Math.min(count, shuffled.length))
+
+  for (let i = 0; i < wanted; i += 1) {
+    const j = i + Math.floor(Math.random() * (shuffled.length - i))
+    // Both indices are in range by construction.
+    const atI = shuffled[i]!
+    shuffled[i] = shuffled[j]!
+    shuffled[j] = atI
+  }
+
+  return shuffled.slice(0, wanted)
+}
+
+/**
+ * The public "discover" feed: a handful of events for a visitor to open.
+ *
+ * Two tiers, deliberately:
+ *
+ *   1. Upcoming events, randomly sampled, so repeat visits surface different
+ *      ones. The sample is drawn from a bounded soonest-first window rather than
+ *      the whole table, so the cost does not grow with the index.
+ *   2. Most recent past events, to top up. Without this a young or quiet index
+ *      would leave the homepage empty.
+ *
+ * Events with no `startsAt` are excluded: the lexicon makes `startsAt` optional,
+ * but an undated event is not something to put on a calendar discovery list.
+ */
+export const listDiscoverEvents = async (
+  db: DbOrTrx,
+  { limit, candidatePool = 200 }: DiscoverEventsOptions,
+): Promise<EventRow[]> => {
+  const wanted = Math.max(0, Math.min(limit, MAX_DISCOVER_LIMIT))
+  if (wanted === 0) return []
+
+  const now = new Date()
+
+  const upcoming = await db
+    .selectFrom('event')
+    .selectAll()
+    .where('starts_at', 'is not', null)
+    .where('starts_at', '>=', now)
+    .orderBy('starts_at', 'asc')
+    .limit(candidatePool)
+    .execute()
+
+  const picked = sampleWithoutReplacement(upcoming, wanted)
+  if (picked.length === wanted) return picked
+
+  const excludedUris = picked.map((row) => row.uri)
+  const recent = await db
+    .selectFrom('event')
+    .selectAll()
+    .where('starts_at', 'is not', null)
+    .where('starts_at', '<', now)
+    .$if(excludedUris.length > 0, (qb) => qb.where('uri', 'not in', excludedUris))
+    .orderBy('starts_at', 'desc')
+    .limit(wanted - picked.length)
+    .execute()
+
+  return [...picked, ...recent]
+}
+
+export type EventRow = Awaited<ReturnType<typeof listEventsByAuthor>>[number]
+
 /** The primary read: "who is going to event X" (uses `rsvp_subject_uri_idx`). */
 export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string) =>
   db

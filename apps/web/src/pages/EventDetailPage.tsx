@@ -10,6 +10,7 @@ import {
   type RsvpStatus,
   respondToEvent,
 } from '../lib/api'
+import { formatEventWindow } from '../lib/format'
 import { useMe } from '../lib/useMe'
 
 const RESPONSE_LABEL: Record<RsvpStatus, string> = {
@@ -17,6 +18,13 @@ const RESPONSE_LABEL: Record<RsvpStatus, string> = {
   notgoing: 'declined',
   interested: 'interested',
 }
+
+/** Where "back" goes depends on how the visitor got here: discover or their own list. */
+const BackLink = ({ toMyEvents }: { toMyEvents: boolean }) => (
+  <Link to={toMyEvents ? '/events' : '/'}>
+    {toMyEvents ? 'Back to my events' : 'Back to discover'}
+  </Link>
+)
 
 /** The index stores RSVP status as a free-form string, so map it defensively. */
 const rsvpTone = (status: string): BadgeTone => {
@@ -76,7 +84,7 @@ export const EventDetailPage = () => {
       <Panel title="Event">
         <Notice tone="error">This event link is malformed.</Notice>
         <p>
-          <Link to="/events">Back to my events</Link>
+          <BackLink toMyEvents={Boolean(me.data)} />
         </p>
       </Panel>
     )
@@ -95,7 +103,7 @@ export const EventDetailPage = () => {
       <Panel title="Event">
         <Notice tone="error">This event could not be found.</Notice>
         <p>
-          <Link to="/events">Back to my events</Link>
+          <BackLink toMyEvents={Boolean(me.data)} />
         </p>
       </Panel>
     )
@@ -198,12 +206,7 @@ export const EventDetailPage = () => {
           </Button>
         ) : undefined
       }
-      meta={
-        <>
-          Starts {new Date(event.starts_at).toLocaleString()}
-          {event.ends_at ? ` · Ends ${new Date(event.ends_at).toLocaleString()}` : ''}
-        </>
-      }
+      meta={formatEventWindow(event.starts_at, event.ends_at)}
     >
       {info?.valid && info.inviterHandle ? (
         <p className="muted">
@@ -234,7 +237,7 @@ export const EventDetailPage = () => {
       </section>
 
       <p>
-        <Link to="/events">Back to my events</Link>
+        <BackLink toMyEvents={Boolean(me.data)} />
       </p>
 
       {inviteOpen ? (

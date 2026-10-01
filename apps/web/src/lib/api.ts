@@ -50,7 +50,8 @@ export interface EventRow {
   cid: string
   author_did: string
   name: string
-  starts_at: string
+  /** Optional in the lexicon, so the index really can hold an undated event. */
+  starts_at: string | null
   ends_at: string | null
   indexed_at: string
   raw: unknown
@@ -74,6 +75,13 @@ export const fetchMe = (): Promise<MeResponse> => request<MeResponse>('/api/me')
 
 export const fetchMyEvents = (): Promise<{ events: EventRow[] }> =>
   request<{ events: EventRow[] }>('/api/me/events')
+
+/**
+ * The public discover feed: upcoming events, randomly sampled, topped up with
+ * recent ones. Needs no session, so the homepage works for a cold visitor.
+ */
+export const fetchDiscoverEvents = (limit = 6): Promise<{ events: EventRow[] }> =>
+  request<{ events: EventRow[] }>(`/api/events?limit=${limit}`)
 
 export const fetchEventRsvps = (uri: string): Promise<{ event: EventRow; rsvps: RsvpRow[] }> =>
   request<{ event: EventRow; rsvps: RsvpRow[] }>(`/api/events/${encodeURIComponent(uri)}/rsvps`)
