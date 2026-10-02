@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { InviteModal } from '../components/InviteModal'
+import { Markdown } from '../components/Markdown'
 import { ShareButton } from '../components/ShareButton'
 import { fetchEventRsvps, fetchInvite, type RsvpStatus, respondToEvent } from '../lib/api'
 import { buildEventPath, buildEventUri } from '../lib/eventUri'
@@ -211,7 +212,7 @@ export const EventDetailPage = () => {
       {event.description === null ? null : (
         <section className="stack stack--tight">
           <h2>About</h2>
-          <p>{event.description}</p>
+          <Markdown>{event.description}</Markdown>
         </section>
       )}
 

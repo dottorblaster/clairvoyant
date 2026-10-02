@@ -1,0 +1,97 @@
+/* ==========================================================================
+   Clairvoyant UI — markdown prose
+   Styles the output of the Markdown renderer used for event descriptions.
+   Scoped to `.markdown` so it never leaks into the rest of the app.
+
+   Raw HTML is not rendered (see apps/web `Markdown`), so only the elements
+   Markdown itself emits need styling.
+   ========================================================================== */
+
+.markdown {
+  /* Long words and bare URLs must not blow out the panel width. */
+  overflow-wrap: anywhere;
+}
+
+/* The base layer removes default margins, so restore gaps between block
+   children only. */
+.markdown > * + * {
+  margin-top: var(--space-3);
+}
+
+.markdown > :first-child {
+  margin-top: 0;
+}
+
+/* The panel title is the page's h1, so the renderer maps Markdown headings one
+   level down; these tune the sizes the base layer already sets. */
+.markdown h2 {
+  font-size: var(--text-lg);
+}
+
+.markdown h3 {
+  font-size: var(--text-md);
+}
+
+.markdown h4,
+.markdown h5,
+.markdown h6 {
+  font-family: var(--font-pixel);
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+}
+
+.markdown li + li {
+  margin-top: var(--space-1);
+}
+
+.markdown blockquote {
+  padding: var(--space-2) var(--space-4);
+  border-left: var(--border-w) solid var(--border-strong);
+  color: var(--fg-muted);
+}
+
+.markdown pre {
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--surface-inset);
+  border: var(--border-w) solid var(--border);
+  overflow-x: auto;
+}
+
+.markdown pre code {
+  padding: 0;
+  background: none;
+  border: 0;
+}
+
+.markdown img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border: var(--border-w) solid var(--border-strong);
+}
+
+.markdown hr {
+  border: 0;
+  border-top: var(--border-w) solid var(--border);
+}
+
+.markdown table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.markdown th,
+.markdown td {
+  padding: var(--space-2) var(--space-3);
+  border: var(--border-w) solid var(--border);
+  text-align: left;
+}
+
+.markdown th {
+  font-family: var(--font-pixel);
+  text-transform: uppercase;
+  letter-spacing: var(--track-wide);
+  background-color: var(--surface-inset);
+}

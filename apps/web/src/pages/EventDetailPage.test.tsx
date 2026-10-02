@@ -90,7 +90,7 @@ describe('EventDetailPage', () => {
   test('renders the description and locations, and offers sharing without a session', async () => {
     const detailed = {
       ...event,
-      description: 'Come celebrate with us',
+      description: 'Come **celebrate** — [details](https://example.com/details)',
       locations: [
         {
           $type: 'community.lexicon.location.address',
@@ -108,8 +108,10 @@ describe('EventDetailPage', () => {
 
     renderWithProviders(<EventDetailPage />, { route: ROUTE, path: PATH })
 
-    expect(await screen.findByText('Come celebrate with us')).toBeTruthy()
+    // The description is Markdown, not plain text.
+    expect(await screen.findByText('celebrate')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'About' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'details' }).getAttribute('rel')).toContain('noopener')
     expect(screen.getByRole('heading', { name: 'Location' })).toBeTruthy()
     expect(screen.getByText('12 Main St, Springfield, US')).toBeTruthy()
     expect(screen.getByText('https://meet.example.com/abc')).toBeTruthy()
