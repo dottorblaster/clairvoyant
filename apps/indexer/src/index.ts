@@ -77,7 +77,7 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
         if (signal.aborted) break
 
         // Low-cardinality attributes are reused for the metric; the span also
-        // carries the sequence, which is too high-cardinality for a metric.
+        // carries the sequence, which is too high-cardinality for a metric
         const attributes: Attributes = { 'jetstream.kind': event.kind }
         if (event.kind === 'commit') {
           attributes['atproto.collection'] = event.commit.collection
@@ -101,7 +101,7 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
 
       if (signal.aborted) break
       // A live replay should not normally end; if it does, reconnect from the
-      // cursor so we do not re-index already-processed history.
+      // cursor so we do not re-index already-processed history
       log.warn('replay stream ended; reconnecting from cursor', { seq })
       await sleep(BASE_BACKOFF_MS)
     } catch (error) {
@@ -134,7 +134,7 @@ const main = async (): Promise<void> => {
   const env = loadEnv()
   const log = createLogger(env.LOG_LEVEL, { app: 'indexer' })
 
-  // Optional: a no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
+  // Optional: a no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set
   await startTelemetry({ serviceName: 'clairvoyant-indexer' })
 
   const db = createDb({ connectionString: env.DATABASE_URL })
@@ -170,7 +170,6 @@ const main = async (): Promise<void> => {
     })
   } finally {
     await closeDb(db)
-    // Flush spans and metrics before the process goes away.
     await shutdownTelemetry()
   }
 }

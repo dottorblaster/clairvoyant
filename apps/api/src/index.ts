@@ -8,6 +8,7 @@ import { type Env, loadEnv } from './env.js'
 import { createLogger, type Logger } from './logger.js'
 import { createOAuthClient } from './oauth/client.js'
 import { createPdsPort } from './pds.js'
+import { createRateLimiters } from './rate-limit.js'
 import { createDbStore } from './store.js'
 
 export interface Runtime {
@@ -27,7 +28,14 @@ export const createRuntime = (env: Env = loadEnv()): Runtime => {
     env,
     log,
     db,
-    deps: { env, oauth, store: createDbStore(db), pds: createPdsPort(oauth), log },
+    deps: {
+      env,
+      oauth,
+      store: createDbStore(db),
+      pds: createPdsPort(oauth),
+      log,
+      limits: createRateLimiters(),
+    },
   }
 }
 

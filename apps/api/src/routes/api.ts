@@ -4,6 +4,7 @@ import { Hono } from 'hono'
 import type { HonoEnv } from '../context.js'
 import { generateInviteToken, hashInviteToken } from '../invites.js'
 import { writeRsvpRecord } from '../pds.js'
+import { rateLimit } from '../rate-limit.js'
 import {
   CreateEventSchema,
   CreateInviteSchema,
@@ -97,7 +98,7 @@ apiRoutes.get('/events/:encodedUri/rsvps', async (c) => {
   return c.json({ event, rsvps })
 })
 
-apiRoutes.post('/events/:encodedUri/rsvp', async (c) => {
+apiRoutes.post('/events/:encodedUri/rsvp', rateLimit('rsvp'), async (c) => {
   const deps = c.get('deps')
   const did = c.get('did')
   if (!did) return c.json({ error: 'unauthenticated' }, 401)
@@ -149,7 +150,7 @@ apiRoutes.post('/events/:encodedUri/rsvp', async (c) => {
 // POST /api/events/:uri/invites — any logged-in user can invite someone by
 // handle. The handle is resolved to a DID and the invite is bound to it, so the
 // resulting link can only be used by that person.
-apiRoutes.post('/events/:encodedUri/invites', async (c) => {
+apiRoutes.post('/events/:encodedUri/invites', rateLimit('createInvite'), async (c) => {
   const deps = c.get('deps')
   const did = c.get('did')
   if (!did) return c.json({ error: 'unauthenticated' }, 401)
@@ -227,7 +228,7 @@ apiRoutes.get('/invites/:token', async (c) => {
   })
 })
 
-apiRoutes.post('/events', async (c) => {
+apiRoutes.post('/events', rateLimit('createEvent'), async (c) => {
   const deps = c.get('deps')
   const did = c.get('did')
   if (!did) return c.json({ error: 'unauthenticated' }, 401)

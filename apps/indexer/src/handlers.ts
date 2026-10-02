@@ -113,7 +113,7 @@ export const createProjector =
           deps.log.info('cleared derived rows for synced account', { did: event.did })
           break
         case 'identity':
-          // Identity changes (handle, PDS endpoint) do not affect indexed rows.
+          // Identity changes (handle, PDS endpoint) do not affect indexed rows
           deps.log.debug('identity event (ignored)', { did: event.did, seq: event.seq })
           break
       }

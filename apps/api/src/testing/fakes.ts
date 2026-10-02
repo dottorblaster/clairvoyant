@@ -12,6 +12,7 @@ import type { Env } from '../env.js'
 import type { Logger, LogLevel } from '../logger.js'
 import type { OAuthClient } from '../oauth/client.js'
 import type { PdsAgent, PdsPort } from '../pds.js'
+import { createRateLimiters, type RateLimiters } from '../rate-limit.js'
 import { serializeSession } from '../session-cookie.js'
 import type { Store } from '../store.js'
 
@@ -158,6 +159,8 @@ export interface TestAppOptions {
   pds?: PdsPort
   log?: Logger
   oauth?: Partial<OAuthClient>
+  /** Override the rate limiters (e.g. with a fake clock or a smaller window). */
+  limits?: RateLimiters
 }
 
 /** Build the real Hono app with fake dependencies, ready for `app.request()`. */
@@ -179,6 +182,7 @@ export const createTestApp = (options: TestAppOptions = {}) => {
     store: options.store ?? createFakeStore().store,
     pds: options.pds ?? createFakePds().pds,
     log,
+    limits: options.limits ?? createRateLimiters(),
   }
 
   return { app: createApp(deps), deps, env, oauth }

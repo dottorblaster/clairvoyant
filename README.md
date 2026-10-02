@@ -79,7 +79,7 @@ HTTP port.
 
 ## Prerequisites
 
-- Node.js current LTS (>= 22)
+- Node.js >= 22.18 (the entry points gate on `import.meta.main`)
 - pnpm 10 (`corepack enable`)
 - Docker (for Postgres 17)
 
@@ -162,7 +162,24 @@ and how the isolated test databases work.
 | GET | `/api/me/events` | Events the current user hosts **or is attending** (authored + RSVP'd), each with a `role` |
 | GET | `/api/events?limit=` | Public discover feed: upcoming events, randomly sampled. No session required |
 | GET | `/api/events/:encodedUri/rsvps` | RSVPs for an event (from the index) |
-| POST | `/api/events` | Create an event record **on the user's PDS** |
+| POST | `/api/events` | Create an event record **on the user's PDS** — rate limited |
+| POST | `/api/events/:encodedUri/invites` | Mint a per-person invite bound to a handle's DID — rate limited |
+| POST | `/api/events/:encodedUri/rsvp` | Write the invited user's RSVP **to their own PDS** — rate limited |
+| GET | `/api/invites/:token` | Validate an invite for the current viewer |
+
+### Abuse controls
+
+Every endpoint that makes the API write to a PDS on a user's behalf is charged to
+that account's own fixed window (`apps/api/src/rate-limit.ts`): 10 event creations
+and 30 invites/RSVPs per 10 minutes. A limited response is a `429` with
+`Retry-After`, `RateLimit-Limit`, `RateLimit-Remaining` and `RateLimit-Reset`
+headers. Requests with no session are left to the route's own `401`, because there
+is no account to charge yet.
+
+All request bodies are capped at 32 KiB (`apps/api/src/app.ts`), enforced against
+`Content-Length` when present and by streaming when it is not; oversized bodies get
+a `413`. The limiter is in-process, so a multi-instance deployment would move the
+counters to a shared store; the `RateLimiter` port is the seam for that.
 
 ## Layout
 

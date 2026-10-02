@@ -28,8 +28,8 @@ jobs:
       # Report every supported Node version even if one fails.
       fail-fast: false
       matrix:
-        # package.json declares engines.node >=22.9.0; the entry-point guards use
-        # `import.meta.main`, which landed in Node 22.18.0.
+        # package.json declares engines.node >=22.18.0 because the entry-point
+        # guards use `import.meta.main`, which landed in Node 22.18.0.
         node: ['22', '24']
 
     services:

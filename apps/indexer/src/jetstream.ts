@@ -46,15 +46,6 @@ export interface ReplayOptions {
   afterSeq: number
 }
 
-/**
- * `replay` yields historical events after `afterSeq` and then transparently
- * cuts over to the live tail, so one async iterator covers backfill + follow.
- *
- * We deliberately request the *unvalidated* typed stream (plain NSID string
- * filters) and validate records ourselves in `validate.ts`: the wire is not
- * cryptographically verified, so we do not want to rely solely on transport
- * decoding.
- */
 export const replayRecords = (
   client: Jetstream,
   options: ReplayOptions,

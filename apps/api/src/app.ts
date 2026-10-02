@@ -1,10 +1,19 @@
 import { httpInstrumentationMiddleware } from '@hono/otel'
 import { Hono } from 'hono'
+import { bodyLimit } from 'hono/body-limit'
 import { getCookie } from 'hono/cookie'
 import type { AppDeps, HonoEnv } from './context.js'
 import { apiRoutes } from './routes/api.js'
 import { oauthRoutes } from './routes/oauth.js'
 import { parseSession } from './session-cookie.js'
+
+/**
+ * Every request body this API accepts is a small JSON document (the largest is
+ * a 2000-character event description), so anything above this is rejected up
+ * front rather than parsed. Checked against `Content-Length` when present and
+ * by streaming when it is not.
+ */
+export const MAX_BODY_BYTES = 32 * 1024
 
 export const createApp = (deps: AppDeps): Hono<HonoEnv> => {
   const app = new Hono<HonoEnv>()
@@ -13,6 +22,21 @@ export const createApp = (deps: AppDeps): Hono<HonoEnv> => {
   // Hono route pattern as `http.route`. A no-op unless a tracer provider is
   // registered, so this is safe to mount unconditionally.
   app.use(httpInstrumentationMiddleware())
+
+  app.use(
+    '*',
+    bodyLimit({
+      maxSize: MAX_BODY_BYTES,
+      onError: (c) =>
+        c.json(
+          {
+            error: 'payload_too_large',
+            message: `Request body must be at most ${MAX_BODY_BYTES} bytes`,
+          },
+          413,
+        ),
+    }),
+  )
 
   // Dependencies are injected per-request rather than kept in module state.
   app.use('*', async (c, next) => {

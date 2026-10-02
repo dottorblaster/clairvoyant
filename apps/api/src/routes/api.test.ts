@@ -3,7 +3,9 @@ import { describe, test } from 'node:test'
 import type { EventRow, InviteRow, ParticipatingEventRow, RsvpRow } from '@clairvoyant/db'
 import { MAX_DISCOVER_LIMIT } from '@clairvoyant/db'
 import { EVENT_COLLECTION, RSVP_COLLECTION } from '@clairvoyant/lexicons'
+import { MAX_BODY_BYTES } from '../../dist/app.js'
 import { hashInviteToken } from '../../dist/invites.js'
+import { createRateLimiters } from '../../dist/rate-limit.js'
 import {
   cookieFor,
   createFakePds,
@@ -563,5 +565,106 @@ describe('POST /api/events', () => {
     const response = await app.request('/api/events', jsonPost(validBody, cookieFor(env)))
     assert.equal(response.status, 502)
     assert.deepEqual(await response.json(), { error: 'pds_write_failed' })
+  })
+})
+
+/* --------------------------------------------------------- abuse controls */
+
+describe('mutation rate limiting', () => {
+  const validBody = { name: 'Launch party', startsAt: '2026-07-01T18:00:00.000Z' }
+
+  test('429s once the account exhausts its window, and recovers after it', async () => {
+    let now = 0
+    const limits = createRateLimiters(() => now, { createEvent: { limit: 1, windowMs: 60_000 } })
+    const { app, env } = createTestApp({ limits })
+
+    const first = await app.request('/api/events', jsonPost(validBody, cookieFor(env, VIEWER)))
+    assert.equal(first.status, 201)
+    assert.equal(first.headers.get('ratelimit-remaining'), '0')
+
+    const blocked = await app.request('/api/events', jsonPost(validBody, cookieFor(env, VIEWER)))
+    assert.equal(blocked.status, 429)
+    assert.deepEqual(await blocked.json(), {
+      error: 'rate_limited',
+      message: 'Too many requests. Try again later.',
+    })
+    assert.equal(blocked.headers.get('retry-after'), '60')
+
+    now = 60_000
+    const recovered = await app.request('/api/events', jsonPost(validBody, cookieFor(env, VIEWER)))
+    assert.equal(recovered.status, 201)
+  })
+
+  test('charges each account to its own bucket', async () => {
+    const limits = createRateLimiters(() => 0, { createEvent: { limit: 1, windowMs: 60_000 } })
+    const { app, env } = createTestApp({ limits })
+
+    const viewer = await app.request('/api/events', jsonPost(validBody, cookieFor(env, VIEWER)))
+    assert.equal(viewer.status, 201)
+
+    const other = await app.request(
+      '/api/events',
+      jsonPost(validBody, cookieFor(env, 'did:plc:someone-else')),
+    )
+    assert.equal(other.status, 201)
+  })
+
+  test('leaves unauthenticated requests to the 401, not the limiter', async () => {
+    const limits = createRateLimiters(() => 0, { createEvent: { limit: 1, windowMs: 60_000 } })
+    const { app } = createTestApp({ limits })
+
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const response = await app.request('/api/events', jsonPost(validBody))
+      assert.equal(response.status, 401)
+    }
+  })
+
+  test('limits each bucket independently', async () => {
+    const limits = createRateLimiters(() => 0, { createInvite: { limit: 1, windowMs: 60_000 } })
+    const store = createFakeStore({ events: [eventRow(EVENT_URI, 'One')] })
+    const { app, env } = createTestApp({ store: store.store, limits })
+    const url = `/api/events/${encodeURIComponent(EVENT_URI)}/invites`
+
+    const minted = await app.request(url, jsonPost({ handle: 'a.test' }, cookieFor(env)))
+    assert.equal(minted.status, 201)
+
+    const blocked = await app.request(url, jsonPost({ handle: 'b.test' }, cookieFor(env)))
+    assert.equal(blocked.status, 429)
+
+    // The invite window is exhausted, but event creation has its own room.
+    const created = await app.request('/api/events', jsonPost(validBody, cookieFor(env)))
+    assert.equal(created.status, 201)
+  })
+})
+
+describe('request body limit', () => {
+  test('413s a body above the cap', async () => {
+    const { app, env } = createTestApp()
+    const response = await app.request(
+      '/api/events',
+      jsonPost(
+        { name: 'x'.repeat(MAX_BODY_BYTES + 1), startsAt: '2026-07-01T18:00:00.000Z' },
+        cookieFor(env),
+      ),
+    )
+
+    assert.equal(response.status, 413)
+    assert.equal(((await response.json()) as { error: string }).error, 'payload_too_large')
+  })
+
+  test('accepts a body comfortably below the cap', async () => {
+    const { app, env } = createTestApp()
+    const response = await app.request(
+      '/api/events',
+      jsonPost(
+        {
+          name: 'Party',
+          startsAt: '2026-07-01T18:00:00.000Z',
+          description: 'x'.repeat(2_000),
+        },
+        cookieFor(env),
+      ),
+    )
+    assert.equal(response.status, 201)
   })
 })

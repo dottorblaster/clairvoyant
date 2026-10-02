@@ -50,9 +50,10 @@ not work because Kysely's migrator decides whether its bookkeeping tables exist 
   endpoints, `OTEL_SDK_DISABLED`), the no-op handle, and `withSpan` behaviour
   with no tracer provider registered.
 - **`apps/api`** — `env`, `logger`, the signed session cookie, invite tokens, OAuth
-  metadata/stores, the PDS record helpers, and every route exercised through Hono's
-  `app.request()` with fakes for the `Store`/`PdsPort` ports (auth, validation, invite
-  enforcement, PDS failures and success paths).
+  metadata/stores, the PDS record helpers, the rate limiter, and every route exercised
+  through Hono's `app.request()` with fakes for the `Store`/`PdsPort` ports (auth,
+  validation, invite enforcement, rate limiting, the body cap, PDS failures and success
+  paths).
 - **`apps/indexer`** — `env`, `logger`, record parsing, Lexicon validation, the Jetstream
   metadata call, retry/backoff classification, the projector (unit + Postgres), the run
   loop (injected stream/clock/exit) and the `find-start-seq` search.
@@ -68,7 +69,9 @@ A few production modules were split so that behaviour could be tested without a 
 database or browser:
 
 - `apps/api` depends on `Store` and `PdsPort` interfaces (adapters in `store.ts`,
-  `pds.ts`) instead of importing `@clairvoyant/db` and `@atproto/api` directly.
+  `pds.ts`) instead of importing `@clairvoyant/db` and `@atproto/api` directly; its
+  rate limiters are injected through `AppDeps.limits` (`rate-limit.ts`) so a test can
+  supply a fake clock and a tiny window.
 - `apps/indexer` depends on a `ProjectorStore` port; `runIndexer(runtime)` takes the
   stream, clock, exit and abort signal as arguments.
 - Entry points (`apps/api/src/index.ts`, `apps/indexer/src/index.ts`,
