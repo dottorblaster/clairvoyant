@@ -488,8 +488,7 @@
 }
 
 .nav-link {
-  padding-bottom: 2px;
-  border-bottom: 3px solid transparent;
+  position: relative;
   font-family: var(--font-pixel);
   font-size: var(--text-sm);
   font-weight: 700;
@@ -498,16 +497,33 @@
   text-decoration: none;
 }
 
+/* The underline is a pseudo-element, not a border, so it does not change the
+   link's box height. As `padding-bottom` + `border-bottom` it made every nav
+   link 5px taller than the brand and the buttons, and the header's
+   `align-items: center` then centred their text ~3px too high. */
+.nav-link::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: -5px;
+  left: 0;
+  height: 3px;
+  background-color: transparent;
+}
+
 .nav-link:hover {
   background-color: transparent;
   color: var(--fg);
-  border-bottom-color: var(--fg-muted);
+}
+
+.nav-link:hover::after {
+  background-color: var(--fg-muted);
 }
 
 /* NavLink sets aria-current, so the active state is driven by semantics rather
    than by a class the caller has to remember to add. */
-.nav-link[aria-current="page"] {
-  border-bottom-color: var(--fg);
+.nav-link[aria-current="page"]::after {
+  background-color: var(--fg);
 }
 
 .app-account {
