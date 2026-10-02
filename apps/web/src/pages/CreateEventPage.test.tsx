@@ -23,7 +23,7 @@ describe('CreateEventPage', () => {
     expect(await screen.findByText(/need to log in before creating/i)).toBeTruthy()
   })
 
-  test('posts the ISO fields and navigates to the new event', async () => {
+  test('posts the ISO fields and navigates to my events', async () => {
     const { calls } = installFetchStub([
       me,
       {
@@ -40,7 +40,7 @@ describe('CreateEventPage', () => {
     fireEvent.change(screen.getByLabelText('Starts at'), { target: { value: '2030-07-01T18:00' } })
     fireEvent.click(screen.getByRole('button', { name: 'Create event' }))
 
-    expect(await screen.findByText('event detail')).toBeTruthy()
+    expect(await screen.findByText('my events')).toBeTruthy()
 
     const post = calls.find((call) => call.url === '/api/events' && call.init.method === 'POST')
     expect(JSON.parse(post?.init.body ?? '{}')).toEqual({

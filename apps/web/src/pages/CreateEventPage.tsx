@@ -3,7 +3,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { createEvent } from '../lib/api'
-import { buildEventPath, parseEventUri } from '../lib/eventUri'
 import { useMe } from '../lib/useMe'
 
 interface FormState {
@@ -28,10 +27,11 @@ export const CreateEventPage = () => {
 
   const mutation = useMutation({
     mutationFn: createEvent,
-    onSuccess: async (result) => {
+    onSuccess: async () => {
+      // The event is not in the index until the indexer has seen it, so open the
+      // list instead of the detail page
       await queryClient.invalidateQueries({ queryKey: ['my-events'] })
-      const parsed = parseEventUri(result.uri)
-      navigate(parsed ? buildEventPath(parsed.did, parsed.rkey) : '/events')
+      navigate('/events')
     },
   })
 
