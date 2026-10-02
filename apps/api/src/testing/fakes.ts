@@ -57,6 +57,7 @@ export interface FakeStoreSeed {
   invites?: InviteRow[]
   discover?: EventRow[]
   failCreateInvite?: Error
+  failPing?: Error
 }
 
 export const createFakeStore = (seed: FakeStoreSeed = {}) => {
@@ -109,6 +110,9 @@ export const createFakeStore = (seed: FakeStoreSeed = {}) => {
     },
     async getInviteByTokenHash(tokenHash) {
       return invites.get(tokenHash)
+    },
+    async ping() {
+      if (seed.failPing) throw seed.failPing
     },
   }
 

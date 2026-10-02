@@ -15,6 +15,7 @@ const EnvSchema = z.object({
   JETSTREAM_URL: z.url().default('https://jetstream.us-west.bsky.network'),
   JETSTREAM_API_KEY: z.string().min(1).optional(),
   INDEXER_START_SEQ: StartSeqSchema,
+  HEALTH_PORT: z.coerce.number().int().positive().optional(),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 })
 

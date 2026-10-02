@@ -10,6 +10,12 @@ import {
 import { type Env, loadEnv } from './env.js'
 import { createProjector } from './handlers.js'
 import {
+  closeHealthServer,
+  createIndexerHealth,
+  type IndexerHealthReporter,
+  startHealthServer,
+} from './health.js'
+import {
   createJetstreamClient,
   fetchSealedTipSeq,
   type JetstreamClient,
@@ -31,6 +37,7 @@ export interface IndexerRuntime {
   sleep: (ms: number) => Promise<void>
   exit: (code: number) => void
   signal: AbortSignal
+  health?: IndexerHealthReporter
 }
 
 /**
@@ -43,7 +50,7 @@ export interface IndexerRuntime {
  * stream, a fake clock and a fake exit.
  */
 export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
-  const { env, log, store, jetstream, fetchTip, sleep, exit, signal } = runtime
+  const { env, log, store, jetstream, fetchTip, sleep, exit, signal, health } = runtime
   const handleEvent = createProjector({ store, log })
 
   const meter = getMeter()
@@ -70,6 +77,7 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
 
   while (!signal.aborted) {
     try {
+      health?.markConnected()
       for await (const event of replayRecords(jetstream, {
         collections: INDEXED_COLLECTIONS,
         afterSeq: seq,
@@ -90,6 +98,7 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
             'jetstream.seq': event.seq,
           })
           eventsProcessed.add(1, attributes)
+          health?.markEvent(event.seq)
         } catch (error) {
           eventsFailed.add(1, attributes)
           throw error
@@ -100,11 +109,13 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
       }
 
       if (signal.aborted) break
+      health?.markDisconnected()
       // A live replay should not normally end; if it does, reconnect from the
       // cursor so we do not re-index already-processed history
       log.warn('replay stream ended; reconnecting from cursor', { seq })
       await sleep(BASE_BACKOFF_MS)
     } catch (error) {
+      health?.markDisconnected()
       const decision = decideOnFailure(error, backoff)
 
       if (decision.action === 'fatal') {
@@ -156,6 +167,12 @@ const main = async (): Promise<void> => {
     apiKey: env.JETSTREAM_API_KEY,
   })
 
+  const health = env.HEALTH_PORT === undefined ? undefined : createIndexerHealth()
+  const healthServer =
+    env.HEALTH_PORT === undefined || health === undefined
+      ? undefined
+      : await startHealthServer({ port: env.HEALTH_PORT, health, log })
+
   try {
     await runIndexer({
       env,
@@ -167,8 +184,10 @@ const main = async (): Promise<void> => {
       sleep,
       exit: (code) => process.exit(code),
       signal: controller.signal,
+      health,
     })
   } finally {
+    if (healthServer !== undefined) await closeHealthServer(healthServer)
     await closeDb(db)
     await shutdownTelemetry()
   }

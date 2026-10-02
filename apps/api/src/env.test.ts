@@ -23,6 +23,21 @@ describe('loadEnv defaults', () => {
   })
 })
 
+describe('COOKIE_SECURE', () => {
+  test('is undefined by default', () => {
+    assert.equal(loadEnv(required).COOKIE_SECURE, undefined)
+  })
+
+  test('parses the string form', () => {
+    assert.equal(loadEnv({ ...required, COOKIE_SECURE: 'true' }).COOKIE_SECURE, true)
+    assert.equal(loadEnv({ ...required, COOKIE_SECURE: 'false' }).COOKIE_SECURE, false)
+  })
+
+  test('rejects a non-boolean value', () => {
+    assert.throws(() => loadEnv({ ...required, COOKIE_SECURE: 'yes' }), /COOKIE_SECURE/)
+  })
+})
+
 describe('loadEnv required values', () => {
   test('requires DATABASE_URL', () => {
     assert.throws(() => loadEnv({ COOKIE_SECRET: SECRET }), /DATABASE_URL/)

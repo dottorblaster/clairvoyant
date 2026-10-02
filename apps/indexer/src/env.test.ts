@@ -11,7 +11,16 @@ describe('loadEnv defaults', () => {
     assert.equal(env.JETSTREAM_URL, 'https://jetstream.us-west.bsky.network')
     assert.equal(env.JETSTREAM_API_KEY, undefined)
     assert.equal(env.INDEXER_START_SEQ, 0)
+    assert.equal(env.HEALTH_PORT, undefined)
     assert.equal(env.LOG_LEVEL, 'info')
+  })
+
+  test('coerces a positive HEALTH_PORT', () => {
+    assert.equal(loadEnv({ ...required, HEALTH_PORT: '3001' }).HEALTH_PORT, 3001)
+  })
+
+  test('rejects a non-positive HEALTH_PORT', () => {
+    assert.throws(() => loadEnv({ ...required, HEALTH_PORT: '0' }), /HEALTH_PORT/)
   })
 
   test('requires DATABASE_URL', () => {

@@ -1,11 +1,14 @@
 import { Hono } from 'hono'
 import { deleteCookie, getCookie, setCookie } from 'hono/cookie'
 import type { HonoEnv } from '../context.js'
+import type { Env } from '../env.js'
 import { OAUTH_SCOPE } from '../oauth/client.js'
 import { buildClientMetadata } from '../oauth/metadata.js'
 import { serializeSession } from '../session-cookie.js'
 
 export const oauthRoutes = new Hono<HonoEnv>()
+
+const secureCookies = (env: Env): boolean => env.COOKIE_SECURE ?? env.NODE_ENV === 'production'
 
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 const RETURN_TO_COOKIE = 'oauth_return_to'
@@ -40,7 +43,7 @@ oauthRoutes.get('/login', async (c) => {
   if (returnTo) {
     setCookie(c, RETURN_TO_COOKIE, returnTo, {
       httpOnly: true,
-      secure: deps.env.NODE_ENV === 'production',
+      secure: secureCookies(deps.env),
       sameSite: 'Lax',
       path: '/',
       maxAge: 600,
@@ -61,7 +64,7 @@ oauthRoutes.get('/callback', (c) => {
     .then(({ session }) => {
       setCookie(c, deps.env.COOKIE_NAME, serializeSession(deps.env.COOKIE_SECRET, session.did), {
         httpOnly: true,
-        secure: deps.env.NODE_ENV === 'production',
+        secure: secureCookies(deps.env),
         sameSite: 'Lax',
         path: '/',
         maxAge: SESSION_COOKIE_MAX_AGE_SECONDS,

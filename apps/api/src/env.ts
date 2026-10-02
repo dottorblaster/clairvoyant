@@ -12,6 +12,10 @@ const EnvSchema = z
     WEB_ORIGIN: z.url().default('http://127.0.0.1:5173'),
     COOKIE_SECRET: z.string().min(32, 'COOKIE_SECRET must be at least 32 characters'),
     COOKIE_NAME: z.string().min(1).default('clairvoyant_session'),
+    COOKIE_SECURE: z
+      .enum(['true', 'false'])
+      .transform((value) => value === 'true')
+      .optional(),
     LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
   })
   .superRefine((value, ctx) => {

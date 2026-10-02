@@ -14,7 +14,7 @@ import {
   type ParticipatingEventRow,
   type RsvpRow,
 } from '@clairvoyant/db'
-import type { Kysely } from 'kysely'
+import { type Kysely, sql } from 'kysely'
 
 /**
  * The read/write surface `apps/api` needs from storage.
@@ -32,6 +32,7 @@ export interface Store {
   listDiscoverEvents(options: DiscoverEventsOptions): Promise<EventRow[]>
   createInvite(input: InviteInput): Promise<void>
   getInviteByTokenHash(tokenHash: string): Promise<InviteRow | undefined>
+  ping(): Promise<void>
 }
 
 export const createDbStore = (db: Kysely<DB>): Store => ({
@@ -42,4 +43,7 @@ export const createDbStore = (db: Kysely<DB>): Store => ({
   listDiscoverEvents: (options) => listDiscoverEvents(db, options),
   createInvite: (input) => createInvite(db, input),
   getInviteByTokenHash: (tokenHash) => getInviteByTokenHash(db, tokenHash),
+  ping: async () => {
+    await sql`select 1`.execute(db)
+  },
 })
