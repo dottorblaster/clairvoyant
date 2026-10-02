@@ -1,5 +1,6 @@
 import { Agent } from '@atproto/api'
 import { RSVP_COLLECTION } from '@clairvoyant/lexicons'
+import { withSpan } from '@clairvoyant/telemetry'
 import type { OAuthClient } from './oauth/client.js'
 
 /**
@@ -36,49 +37,58 @@ export interface PdsPort {
 }
 
 export const createPdsPort = (oauth: OAuthClient): PdsPort => ({
-  async withAgent(did, run) {
-    const session = await oauth.restore(did)
-    const agent = new Agent(session)
+  withAgent(did, run) {
+    return withSpan(
+      'atproto.pds',
+      async () => {
+        const session = await oauth.restore(did)
+        const agent = new Agent(session)
 
-    return run({
-      async listRecords({ collection, limit, cursor }) {
-        const result = await agent.com.atproto.repo.listRecords({
-          repo: did,
-          collection,
-          limit,
-          ...(cursor === undefined ? {} : { cursor }),
+        return run({
+          async listRecords({ collection, limit, cursor }) {
+            const result = await agent.com.atproto.repo.listRecords({
+              repo: did,
+              collection,
+              limit,
+              ...(cursor === undefined ? {} : { cursor }),
+            })
+            return {
+              records: result.data.records.map((record) => ({
+                uri: record.uri,
+                value: record.value,
+              })),
+              cursor: result.data.cursor,
+            }
+          },
+          async createRecord({ collection, record }) {
+            const result = await agent.com.atproto.repo.createRecord({
+              repo: did,
+              collection,
+              record,
+            })
+            return { uri: result.data.uri, cid: result.data.cid }
+          },
+          async putRecord({ collection, rkey, record }) {
+            const result = await agent.com.atproto.repo.putRecord({
+              repo: did,
+              collection,
+              rkey,
+              record,
+            })
+            return { uri: result.data.uri, cid: result.data.cid }
+          },
+          async getSession() {
+            const result = await agent.com.atproto.server.getSession()
+            return { handle: result.data.handle }
+          },
+          async resolveHandle(handle) {
+            const result = await agent.com.atproto.identity.resolveHandle({ handle })
+            return result.data.did
+          },
         })
-        return {
-          records: result.data.records.map((record) => ({ uri: record.uri, value: record.value })),
-          cursor: result.data.cursor,
-        }
       },
-      async createRecord({ collection, record }) {
-        const result = await agent.com.atproto.repo.createRecord({
-          repo: did,
-          collection,
-          record,
-        })
-        return { uri: result.data.uri, cid: result.data.cid }
-      },
-      async putRecord({ collection, rkey, record }) {
-        const result = await agent.com.atproto.repo.putRecord({
-          repo: did,
-          collection,
-          rkey,
-          record,
-        })
-        return { uri: result.data.uri, cid: result.data.cid }
-      },
-      async getSession() {
-        const result = await agent.com.atproto.server.getSession()
-        return { handle: result.data.handle }
-      },
-      async resolveHandle(handle) {
-        const result = await agent.com.atproto.identity.resolveHandle({ handle })
-        return result.data.did
-      },
-    })
+      { 'atproto.did': did },
+    )
   },
 })
 

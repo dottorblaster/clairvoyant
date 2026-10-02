@@ -1,3 +1,4 @@
+import { httpInstrumentationMiddleware } from '@hono/otel'
 import { Hono } from 'hono'
 import { getCookie } from 'hono/cookie'
 import type { AppDeps, HonoEnv } from './context.js'
@@ -7,6 +8,11 @@ import { parseSession } from './session-cookie.js'
 
 export const createApp = (deps: AppDeps): Hono<HonoEnv> => {
   const app = new Hono<HonoEnv>()
+
+  // One server span plus `http.server.request.duration` per request, with the
+  // Hono route pattern as `http.route`. A no-op unless a tracer provider is
+  // registered, so this is safe to mount unconditionally.
+  app.use(httpInstrumentationMiddleware())
 
   // Dependencies are injected per-request rather than kept in module state.
   app.use('*', async (c, next) => {

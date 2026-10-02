@@ -1,5 +1,12 @@
 import { closeDb, createDb } from '@clairvoyant/db'
 import { INDEXED_COLLECTIONS } from '@clairvoyant/lexicons'
+import {
+  type Attributes,
+  getMeter,
+  shutdownTelemetry,
+  startTelemetry,
+  withSpan,
+} from '@clairvoyant/telemetry'
 import { type Env, loadEnv } from './env.js'
 import { createProjector } from './handlers.js'
 import {
@@ -39,6 +46,10 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
   const { env, log, store, jetstream, fetchTip, sleep, exit, signal } = runtime
   const handleEvent = createProjector({ store, log })
 
+  const meter = getMeter()
+  const eventsProcessed = meter.createCounter('clairvoyant.indexer.events')
+  const eventsFailed = meter.createCounter('clairvoyant.indexer.failures')
+
   const cursorSeq = await store.readCursor()
   const startSeq =
     cursorSeq > 0
@@ -64,7 +75,26 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
         afterSeq: seq,
       })) {
         if (signal.aborted) break
-        await handleEvent(event)
+
+        // Low-cardinality attributes are reused for the metric; the span also
+        // carries the sequence, which is too high-cardinality for a metric.
+        const attributes: Attributes = { 'jetstream.kind': event.kind }
+        if (event.kind === 'commit') {
+          attributes['atproto.collection'] = event.commit.collection
+          attributes['atproto.operation'] = event.commit.operation
+        }
+
+        try {
+          await withSpan('jetstream.event', () => handleEvent(event), {
+            ...attributes,
+            'jetstream.seq': event.seq,
+          })
+          eventsProcessed.add(1, attributes)
+        } catch (error) {
+          eventsFailed.add(1, attributes)
+          throw error
+        }
+
         seq = event.seq
         backoff = BASE_BACKOFF_MS
       }
@@ -103,6 +133,10 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
 const main = async (): Promise<void> => {
   const env = loadEnv()
   const log = createLogger(env.LOG_LEVEL, { app: 'indexer' })
+
+  // Optional: a no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
+  await startTelemetry({ serviceName: 'clairvoyant-indexer' })
+
   const db = createDb({ connectionString: env.DATABASE_URL })
 
   const controller = new AbortController()
@@ -136,6 +170,8 @@ const main = async (): Promise<void> => {
     })
   } finally {
     await closeDb(db)
+    // Flush spans and metrics before the process goes away.
+    await shutdownTelemetry()
   }
 }
 

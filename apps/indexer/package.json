@@ -18,6 +18,7 @@
     "@bsky/jetstream": "^1.0.0",
     "@clairvoyant/db": "workspace:*",
     "@clairvoyant/lexicons": "workspace:*",
+    "@clairvoyant/telemetry": "workspace:*",
     "kysely": "^0.29.6",
     "zod": "^4.6.5"
   },

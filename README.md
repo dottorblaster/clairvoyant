@@ -50,6 +50,33 @@ be expressed as a start sequence. To keep only recent data you must either start
 (nothing before now) or replay from `0` and filter by each event's `time` before writing. The public
 Jetstream instance also requires `JETSTREAM_API_KEY` for the archive/`planSnapshot` endpoints.
 
+## Observability (OpenTelemetry)
+
+Both services emit traces and metrics to any OTLP endpoint, and start nothing at all when none is
+configured: the OpenTelemetry SDK is only imported once `OTEL_EXPORTER_OTLP_ENDPOINT` is set, so a
+self-hoster who does not want telemetry pays no startup cost.
+
+```bash
+export OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318   # HTTP/protobuf, the default
+export OTEL_SERVICE_NAME=clairvoyant-api                    # optional override
+# gRPC collectors instead:
+# export OTEL_EXPORTER_OTLP_PROTOCOL=grpc
+```
+
+Standard `OTEL_*` variables are honoured (`OTEL_EXPORTER_OTLP_PROTOCOL`, `OTEL_SERVICE_NAME`,
+`OTEL_SDK_DISABLED`, per-signal endpoints such as `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`). The
+telemetry bootstrap lives in `packages/telemetry`.
+
+| Signal | Where | Notes |
+| --- | --- | --- |
+| Server spans + `http.server.request.duration` | `apps/api` | one per request, with the Hono route pattern as `http.route` |
+| `atproto.pds` spans | `apps/api` | one per PDS operation, tagged with the DID |
+| `jetstream.event` spans | `apps/indexer` | one per streamed event, tagged with collection, operation and sequence |
+| `clairvoyant.indexer.events` / `clairvoyant.indexer.failures` | `apps/indexer` | counters with low-cardinality attributes only |
+
+To try it locally, run a collector (or Jaeger) and point `OTEL_EXPORTER_OTLP_ENDPOINT` at its OTLP
+HTTP port.
+
 ## Prerequisites
 
 - Node.js current LTS (>= 22)
@@ -145,6 +172,7 @@ and how the isolated test databases work.
 ├─ packages/
 │  ├─ lexicons/                  # generated Lexicon types from `lex build`
 │  ├─ ui/                        # design system: tokens, CSS layers, React primitives
+│  ├─ telemetry/                 # optional OpenTelemetry (OTLP) bootstrap
 │  └─ db/                        # Kysely schema, migrations, typed queries
 ├─ apps/
 │  ├─ api/                       # Hono + BFF OAuth + XRPC

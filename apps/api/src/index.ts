@@ -1,4 +1,5 @@
 import { closeDb, createDb, type DB } from '@clairvoyant/db'
+import { shutdownTelemetry, startTelemetry } from '@clairvoyant/telemetry'
 import { serve } from '@hono/node-server'
 import type { Kysely } from 'kysely'
 import { createApp } from './app.js'
@@ -54,6 +55,8 @@ export const createShutdown = (
     server.close((error) => {
       if (error) log.error('error closing http server', { err: error })
       closeDb(db)
+        // Flush spans and metrics before the process goes away.
+        .then(() => shutdownTelemetry())
         .then(() => {
           log.info('api stopped')
           exit(error ? 1 : 0)
@@ -67,6 +70,9 @@ export const createShutdown = (
 }
 
 const main = async (): Promise<void> => {
+  // Optional: a no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
+  await startTelemetry({ serviceName: 'clairvoyant-api' })
+
   const runtime = createRuntime()
   const app = createApp(runtime.deps)
 

@@ -46,6 +46,9 @@ not work because Kysely's migrator decides whether its bookkeeping tables exist 
   `migrate up/down`.
 - **`packages/lexicons`** — the NSID constants and the generated `$safeValidate`
   contract the indexer relies on (including the advisory-`knownValues` behaviour).
+- **`packages/telemetry`** — the OTLP enable/disable gate (no endpoint, per-signal
+  endpoints, `OTEL_SDK_DISABLED`), the no-op handle, and `withSpan` behaviour
+  with no tracer provider registered.
 - **`apps/api`** — `env`, `logger`, the signed session cookie, invite tokens, OAuth
   metadata/stores, the PDS record helpers, and every route exercised through Hono's
   `app.request()` with fakes for the `Store`/`PdsPort` ports (auth, validation, invite
