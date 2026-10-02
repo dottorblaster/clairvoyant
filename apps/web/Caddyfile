@@ -1,0 +1,40 @@
+{
+	admin off
+	auto_https off
+}
+
+:80 {
+	encode zstd gzip
+
+	header {
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+		X-Frame-Options "DENY"
+		Permissions-Policy "camera=(), microphone=(), geolocation=()"
+		Cross-Origin-Opener-Policy "same-origin"
+		Cross-Origin-Resource-Policy "same-origin"
+		-Server
+	}
+
+	@document not path /api/* /oauth/*
+	header @document Content-Security-Policy "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data: https:; font-src 'self'; connect-src 'self'; media-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; worker-src 'none'; manifest-src 'self'"
+
+	@https protocol https
+	header @https Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+	handle /api/* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle /oauth/* {
+		reverse_proxy {$API_UPSTREAM:api:8080}
+	}
+
+	handle {
+		root * /srv
+		@immutable path /assets/*
+		header @immutable Cache-Control "public, max-age=31536000, immutable"
+		try_files {path} /index.html
+		file_server
+	}
+}

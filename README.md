@@ -154,6 +154,8 @@ and how the isolated test databases work.
 | Method | Path | Purpose |
 | --- | --- | --- |
 | GET | `/oauth/client-metadata.json` | OAuth client metadata |
+| GET | `/health` | Liveness probe (no dependencies) |
+| GET | `/ready` | Readiness probe (`503` when Postgres is unreachable) |
 | GET | `/oauth/jwks.json` | Empty JWKS (public client) |
 | GET | `/oauth/login?handle=` | Start OAuth (redirects) |
 | GET | `/oauth/callback` | OAuth redirect target; sets the session cookie |
@@ -180,6 +182,20 @@ All request bodies are capped at 32 KiB (`apps/api/src/app.ts`), enforced agains
 `Content-Length` when present and by streaming when it is not; oversized bodies get
 a `413`. The limiter is in-process, so a multi-instance deployment would move the
 counters to a shared store; the `RateLimiter` port is the seam for that.
+
+## Running the full stack in Docker
+
+`docker compose up -d` still starts Postgres only, so local development is unchanged. The
+application services are behind the `app` profile:
+
+```bash
+docker compose --profile app up --build
+```
+
+That builds the three images from the root `Dockerfile` and serves the app at
+<http://127.0.0.1:8080>. Caddy serves the SPA and reverse-proxies `/api` and `/oauth` to the
+API, so the browser and the API are same-origin. See [`docs/DEPLOY.md`](docs/DEPLOY.md) for the
+image layout, the production environment, the security headers and the health endpoints.
 
 ## Layout
 

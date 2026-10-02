@@ -1,3 +1,5 @@
+name: clairvoyant
+
 services:
   postgres:
     image: postgres:17-alpine
@@ -16,6 +18,101 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+
+  migrate:
+    profiles: ['app']
+    build:
+      context: .
+      target: api
+    command: ['node', 'node_modules/@clairvoyant/db/dist/migrate.js', 'up']
+    environment:
+      DATABASE_URL: postgres://app:app@postgres:5432/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    profiles: ['app']
+    build:
+      context: .
+      target: api
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://app:app@postgres:5432/app
+      PORT: '8080'
+      OAUTH_MODE: loopback
+      WEB_ORIGIN: ${WEB_ORIGIN:-http://127.0.0.1:8080}
+      COOKIE_SECRET: ${COOKIE_SECRET:-change-me-change-me-change-me-change-me}
+      COOKIE_SECURE: 'false'
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:8080/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
+  indexer:
+    profiles: ['app']
+    build:
+      context: .
+      target: indexer
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://app:app@postgres:5432/app
+      JETSTREAM_URL: ${JETSTREAM_URL:-https://jetstream.us-west.bsky.network}
+      JETSTREAM_API_KEY: ${JETSTREAM_API_KEY:-}
+      INDEXER_START_SEQ: ${INDEXER_START_SEQ:-0}
+      HEALTH_PORT: '3001'
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "fetch('http://127.0.0.1:3001/health').then((r) => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  web:
+    profiles: ['app']
+    build:
+      context: .
+      target: web
+      args:
+        VITE_API_BASE: ''
+    environment:
+      API_UPSTREAM: api:8080
+    ports:
+      - '127.0.0.1:${WEB_PORT:-8080}:80'
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'wget', '--spider', '-q', 'http://127.0.0.1/']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
 volumes:
   postgres-data:
