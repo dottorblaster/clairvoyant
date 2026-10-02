@@ -10,6 +10,8 @@ describe('parseEventRecord', () => {
       name: 'Party',
       startsAt: new Date(ISO),
       endsAt: new Date(ISO),
+      description: null,
+      locations: [],
     })
   })
 
@@ -18,12 +20,27 @@ describe('parseEventRecord', () => {
       name: 'Party',
       startsAt: null,
       endsAt: null,
+      description: null,
+      locations: [],
     })
     assert.deepEqual(parseEventRecord({ name: 'Party', startsAt: null, endsAt: null }), {
       name: 'Party',
       startsAt: null,
       endsAt: null,
+      description: null,
+      locations: [],
     })
+  })
+
+  test('projects the description and location objects', () => {
+    const address = { $type: 'community.lexicon.location.address', country: 'IT' }
+    const parsed = parseEventRecord({
+      name: 'Party',
+      description: 'Bring a friend',
+      locations: [address, null, 'x'],
+    })
+    assert.equal(parsed?.description, 'Bring a friend')
+    assert.deepEqual(parsed?.locations, [address])
   })
 
   test('accepts Date values as well as ISO strings', () => {

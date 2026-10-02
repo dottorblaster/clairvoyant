@@ -10,6 +10,8 @@ const event = {
   name: 'Launch party',
   starts_at: '2026-07-01T18:00:00.000Z',
   ends_at: null,
+  description: null,
+  locations: [],
   indexed_at: '2026-01-01T00:00:00.000Z',
   raw: {},
 }

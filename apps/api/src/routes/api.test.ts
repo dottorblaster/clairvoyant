@@ -31,6 +31,8 @@ const eventRow = (
   name,
   starts_at: startsAt,
   ends_at: null,
+  description: null,
+  locations: [],
   indexed_at: DATE,
   raw: { name },
 })

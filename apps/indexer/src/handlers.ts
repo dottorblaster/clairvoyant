@@ -54,6 +54,8 @@ const handleCommit = async (
       name: parsed.name,
       startsAt: parsed.startsAt,
       endsAt: parsed.endsAt,
+      description: parsed.description,
+      locations: parsed.locations,
       raw: record,
     })
     return

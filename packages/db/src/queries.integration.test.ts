@@ -35,6 +35,8 @@ const eventInput = (uri: string, name: string, startsAt: Date | null, authorDid 
   name,
   startsAt,
   endsAt: null,
+  description: null,
+  locations: [],
   raw: { name },
 })
 

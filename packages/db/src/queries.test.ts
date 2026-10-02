@@ -168,6 +168,8 @@ const eventRow = (uri: string, name: string, startsAt: Date | null): EventRow =>
   name,
   starts_at: startsAt,
   ends_at: null,
+  description: null,
+  locations: [],
   indexed_at: new Date('2026-01-01T00:00:00Z'),
   raw: { marker: uri },
 })

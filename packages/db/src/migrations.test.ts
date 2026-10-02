@@ -10,6 +10,7 @@ describe('migration registry', () => {
       '003_auth',
       '004_cursor',
       '005_invite',
+      '006_event_details',
     ])
   })
 

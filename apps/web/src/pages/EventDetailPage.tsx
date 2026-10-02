@@ -1,8 +1,10 @@
+import { formatEventLocations } from '@clairvoyant/lexicons'
 import { Badge, Button, Loading, Notice, Panel, TextField } from '@clairvoyant/ui'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { type FormEvent, useState } from 'react'
 import { Link, useParams, useSearchParams } from 'react-router-dom'
 import { InviteModal } from '../components/InviteModal'
+import { ShareButton } from '../components/ShareButton'
 import { fetchEventRsvps, fetchInvite, type RsvpStatus, respondToEvent } from '../lib/api'
 import { buildEventPath, buildEventUri } from '../lib/eventUri'
 import { formatEventWindow } from '../lib/format'
@@ -28,6 +30,9 @@ export const EventDetailPage = () => {
   const rkey = params.rkey
   const eventUri = did && rkey ? buildEventUri(did, rkey) : ''
   const eventPath = did && rkey ? buildEventPath(did, rkey) : ''
+  // Built from the path, not the location, so a shared link never leaks the
+  // `?invite=` token.
+  const shareUrl = eventPath === '' ? '' : `${window.location.origin}${eventPath}`
   const inviteToken = searchParams.get('invite')
 
   const me = useMe()
@@ -93,6 +98,8 @@ export const EventDetailPage = () => {
   }
 
   const { event, rsvps } = query.data
+  // The indexer projects these to columns, so the page never reads `raw`.
+  const locations = formatEventLocations(event.locations)
   const info = invite.data
   const isInviteForMe = info?.valid === true && info.matchesViewer === true
 
@@ -183,11 +190,14 @@ export const EventDetailPage = () => {
     <Panel
       title={event.name}
       actions={
-        me.data ? (
-          <Button icon="user" onClick={() => setInviteOpen(true)}>
-            Invite
-          </Button>
-        ) : undefined
+        <>
+          <ShareButton url={shareUrl} title={event.name} />
+          {me.data ? (
+            <Button icon="user" onClick={() => setInviteOpen(true)}>
+              Invite
+            </Button>
+          ) : null}
+        </>
       }
       meta={formatEventWindow(event.starts_at, event.ends_at)}
     >
@@ -197,6 +207,24 @@ export const EventDetailPage = () => {
           {info.inviteeHandle ? ` as @${info.inviteeHandle}` : ''}
         </p>
       ) : null}
+
+      {event.description === null ? null : (
+        <section className="stack stack--tight">
+          <h2>About</h2>
+          <p>{event.description}</p>
+        </section>
+      )}
+
+      {locations.length === 0 ? null : (
+        <section className="stack stack--tight">
+          <h2>Location</h2>
+          <ul className="data-list">
+            {locations.map((location) => (
+              <li key={location}>{location}</li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="stack stack--tight">
         <h2>RSVPs ({rsvps.length})</h2>

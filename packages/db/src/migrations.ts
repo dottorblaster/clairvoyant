@@ -106,6 +106,26 @@ const invite: Migration = {
   },
 }
 
+const eventDetails: Migration = {
+  async up(db) {
+    await db.schema.alterTable('event').addColumn('description', 'text').execute()
+    await db.schema.alterTable('event').addColumn('locations', 'jsonb').execute()
+
+    // Backfill from the record already stored, so an existing index does not
+    // need a replay to start serving these fields.
+    await sql`
+      update event
+      set description = raw ->> 'description',
+          locations = raw -> 'locations'
+      where description is null and locations is null
+    `.execute(db)
+  },
+  async down(db) {
+    await db.schema.alterTable('event').dropColumn('locations').execute()
+    await db.schema.alterTable('event').dropColumn('description').execute()
+  },
+}
+
 export type MigrationDirection = 'up' | 'down'
 
 export const migrations: Record<string, Migration> = {
@@ -114,6 +134,7 @@ export const migrations: Record<string, Migration> = {
   '003_auth': auth,
   '004_cursor': cursor,
   '005_invite': invite,
+  '006_event_details': eventDetails,
 }
 
 export const migrationProvider: MigrationProvider = {

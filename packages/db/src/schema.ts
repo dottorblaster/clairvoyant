@@ -31,6 +31,10 @@ export interface EventTable {
   name: string
   starts_at: ColumnType<Date | null, Date | string | null, Date | string | null>
   ends_at: ColumnType<Date | null, Date | string | null, Date | string | null>
+  /** Free-text description from the record, projected so it can be searched. */
+  description: string | null
+  /** The record's raw `locations` union array, stored as JSONB. */
+  locations: ColumnType<unknown, unknown, unknown>
   indexed_at: ColumnType<Date, Date | string | undefined, Date | string>
   raw: ColumnType<unknown, unknown, unknown>
 }

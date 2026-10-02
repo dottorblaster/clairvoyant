@@ -21,6 +21,10 @@ export interface EventRow {
   /** Optional in the lexicon, so this is genuinely nullable. */
   starts_at: Date | null
   ends_at: Date | null
+  /** Optional in the lexicon, so this is genuinely nullable. */
+  description: string | null
+  /** The record's `locations` union array, as stored (JSONB). */
+  locations: unknown
   indexed_at: Date
   raw: unknown
 }
@@ -32,6 +36,8 @@ export interface EventUpsert {
   name: string
   startsAt: Date | null
   endsAt: Date | null
+  description: string | null
+  locations: unknown
   raw: unknown
 }
 
@@ -55,6 +61,10 @@ export const upsertEvent = async (db: DbOrTrx, input: EventUpsert): Promise<void
       name: input.name,
       starts_at: input.startsAt,
       ends_at: input.endsAt,
+      description: input.description,
+      // A JS array is sent by `pg` as a Postgres array literal, which JSONB
+      // rejects, so serialise it ourselves and let Postgres parse the JSON text.
+      locations: JSON.stringify(input.locations),
       indexed_at: now,
       raw: input.raw,
     })
@@ -65,6 +75,8 @@ export const upsertEvent = async (db: DbOrTrx, input: EventUpsert): Promise<void
         name: input.name,
         starts_at: input.startsAt,
         ends_at: input.endsAt,
+        description: input.description,
+        locations: JSON.stringify(input.locations),
         indexed_at: now,
         raw: input.raw,
       }),
@@ -250,6 +262,8 @@ const toEventRow = (row: ParticipatingEventRow): EventRow => ({
   name: row.name,
   starts_at: row.starts_at,
   ends_at: row.ends_at,
+  description: row.description,
+  locations: row.locations,
   indexed_at: row.indexed_at,
   raw: row.raw,
 })

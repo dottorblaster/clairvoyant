@@ -1,3 +1,5 @@
+import { parseEventDetails } from '@clairvoyant/lexicons'
+
 const toDate = (value: unknown): Date | null => {
   if (value instanceof Date) {
     return Number.isNaN(value.getTime()) ? null : value
@@ -14,6 +16,8 @@ export interface ParsedEvent {
   name: string
   startsAt: Date | null
   endsAt: Date | null
+  description: string | null
+  locations: unknown[]
 }
 
 export const parseEventRecord = (record: unknown): ParsedEvent | null => {
@@ -29,7 +33,17 @@ export const parseEventRecord = (record: unknown): ParsedEvent | null => {
   const endsAt = value.endsAt == null ? null : toDate(value.endsAt)
   if (value.endsAt != null && endsAt === null) return null
 
-  return { name, startsAt, endsAt }
+  // `description` and `locations` are projected to their own columns; both are
+  // optional, so a missing value is normal rather than a parse failure.
+  const details = parseEventDetails(record)
+
+  return {
+    name,
+    startsAt,
+    endsAt,
+    description: details.description,
+    locations: details.locations,
+  }
 }
 
 export interface ParsedRsvp {

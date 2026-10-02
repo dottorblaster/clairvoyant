@@ -44,6 +44,10 @@ export interface EventRow {
   /** Optional in the lexicon, so the index really can hold an undated event. */
   starts_at: string | null
   ends_at: string | null
+  /** Optional in the lexicon; projected to its own column by the indexer. */
+  description: string | null
+  /** The record's `locations` union array, projected to a JSONB column. */
+  locations: unknown
   indexed_at: string
   raw: unknown
 }

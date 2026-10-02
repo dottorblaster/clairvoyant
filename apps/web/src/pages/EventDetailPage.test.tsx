@@ -20,6 +20,8 @@ const event = {
   name: 'Launch party',
   starts_at: '2030-07-01T18:00:00.000Z',
   ends_at: null,
+  description: null,
+  locations: [],
   indexed_at: '2026-01-01T00:00:00.000Z',
   raw: {},
 }
@@ -83,6 +85,46 @@ describe('EventDetailPage', () => {
     // An unrecognised status falls back to the raw value rather than vanishing.
     expect(screen.getByText('community.lexicon.calendar.rsvp#maybe')).toBeTruthy()
     expect(screen.getByText(/rsvp is invite-only/i)).toBeTruthy()
+  })
+
+  test('renders the description and locations, and offers sharing without a session', async () => {
+    const detailed = {
+      ...event,
+      description: 'Come celebrate with us',
+      locations: [
+        {
+          $type: 'community.lexicon.location.address',
+          street: '12 Main St',
+          locality: 'Springfield',
+          country: 'US',
+        },
+        { $type: 'community.lexicon.calendar.event#uri', uri: 'https://meet.example.com/abc' },
+      ],
+    }
+    installFetchStub([
+      unauthenticated,
+      { path: /\/api\/events\/.*\/rsvps/, status: 200, body: { event: detailed, rsvps } },
+    ])
+
+    renderWithProviders(<EventDetailPage />, { route: ROUTE, path: PATH })
+
+    expect(await screen.findByText('Come celebrate with us')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'About' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Location' })).toBeTruthy()
+    expect(screen.getByText('12 Main St, Springfield, US')).toBeTruthy()
+    expect(screen.getByText('https://meet.example.com/abc')).toBeTruthy()
+    // Sharing is public; only inviting requires a session.
+    expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Invite' })).toBeNull()
+  })
+
+  test('omits the About and Location sections when the record has neither', async () => {
+    installFetchStub([unauthenticated, rsvpsOk])
+    renderWithProviders(<EventDetailPage />, { route: ROUTE, path: PATH })
+
+    await screen.findByRole('heading', { name: 'Launch party' })
+    expect(screen.queryByRole('heading', { name: 'About' })).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Location' })).toBeNull()
   })
 
   test('reports an invalid invite', async () => {

@@ -10,6 +10,8 @@ const row = (uri: string, name: string, startsAt: string | null, role: string) =
   name,
   starts_at: startsAt,
   ends_at: null,
+  description: null,
+  locations: [],
   indexed_at: '2026-01-01T00:00:00.000Z',
   raw: {},
   role,

@@ -139,6 +139,8 @@ describe('createProjector commit events', () => {
     assert.equal(input?.name, 'Party')
     assert.equal(input?.startsAt?.getTime(), Date.parse(TIME))
     assert.equal(input?.endsAt, null)
+    assert.equal(input?.description, null)
+    assert.deepEqual(input?.locations, [])
     assert.deepEqual(input?.raw, eventRecord({ startsAt: TIME }))
   })
 

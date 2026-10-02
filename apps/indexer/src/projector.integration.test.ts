@@ -63,7 +63,14 @@ suite('projector (Postgres integration)', () => {
       commitCreate(
         EVENT_COLLECTION,
         'abc',
-        { $type: EVENT_COLLECTION, name: 'Party', createdAt: TIME, startsAt: TIME },
+        {
+          $type: EVENT_COLLECTION,
+          name: 'Party',
+          createdAt: TIME,
+          startsAt: TIME,
+          description: 'Bring a friend',
+          locations: [{ $type: 'community.lexicon.location.address', country: 'IT' }],
+        },
         11,
       ),
     )
@@ -75,6 +82,10 @@ suite('projector (Postgres integration)', () => {
       .executeTakeFirst()
     assert.equal(row?.name, 'Party')
     assert.equal(row?.starts_at?.getTime(), Date.parse(TIME))
+    assert.equal(row?.description, 'Bring a friend')
+    assert.deepEqual(row?.locations, [
+      { $type: 'community.lexicon.location.address', country: 'IT' },
+    ])
     assert.equal(await readCursor(testDb.db), 11)
   })
 
