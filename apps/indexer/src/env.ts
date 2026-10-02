@@ -1,10 +1,5 @@
 import { z } from 'zod'
 
-// Where a fresh (empty-cursor) index begins.
-//   number -> raw Jetstream sequence to resume after (0 = replay the full archive)
-//   latest -> the current sealed tip, skipping historical backfill
-// Jetstream v2 cursors are sequence numbers, not timestamps, so a date or
-// duration ("last year") cannot be expressed here. See README.
 const StartSeqSchema = z
   .union([z.literal('latest'), z.coerce.number().int().nonnegative()])
   .default(0)

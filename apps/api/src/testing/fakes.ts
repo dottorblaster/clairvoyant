@@ -16,7 +16,6 @@ import { createRateLimiters, type RateLimiters } from '../rate-limit.js'
 import { serializeSession } from '../session-cookie.js'
 import type { Store } from '../store.js'
 
-/** A valid `Env` for tests; override only what the case cares about. */
 export const testEnv = (overrides: Partial<Env> = {}): Env => ({
   NODE_ENV: 'test',
   PORT: 3000,
@@ -120,11 +119,8 @@ export const createFakeStore = (seed: FakeStoreSeed = {}) => {
 }
 
 export interface FakePdsOptions {
-  /** Per-DID agent overrides, merged over the defaults. */
   agents?: Record<string, Partial<PdsAgent>>
-  /** Defaults applied to every agent. */
   defaultAgent?: Partial<PdsAgent>
-  /** Simulate a failed session restore. */
   failRestore?: Error
 }
 
@@ -163,11 +159,9 @@ export interface TestAppOptions {
   pds?: PdsPort
   log?: Logger
   oauth?: Partial<OAuthClient>
-  /** Override the rate limiters (e.g. with a fake clock or a smaller window). */
   limits?: RateLimiters
 }
 
-/** Build the real Hono app with fake dependencies, ready for `app.request()`. */
 export const createTestApp = (options: TestAppOptions = {}) => {
   const env = options.env ?? testEnv()
   const log = options.log ?? createFakeLogger().logger
@@ -192,7 +186,6 @@ export const createTestApp = (options: TestAppOptions = {}) => {
   return { app: createApp(deps), deps, env, oauth }
 }
 
-/** A `Cookie` header carrying a valid signed session for `did`. */
 export const cookieFor = (env: Env, did = 'did:plc:viewer'): { Cookie: string } => ({
   Cookie: `${env.COOKIE_NAME}=${serializeSession(env.COOKIE_SECRET, did)}`,
 })

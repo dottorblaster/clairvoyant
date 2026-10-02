@@ -2,12 +2,6 @@ import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import { describe, test } from 'vitest'
 
-/**
- * Tests the stylesheet as data. These are the invariants that are easy to break
- * by hand and impossible to see in a code review: a token that is read but never
- * defined, a theme that forgot one variable, a corner that quietly got rounded.
- */
-
 const FILES = ['tokens.css', 'base.css', 'components.css', 'utilities.css']
 
 const read = (file: string): string =>
@@ -18,9 +12,7 @@ const tokensCss = read('tokens.css')
 
 const isDefined = (value: string | undefined): value is string => value !== undefined
 
-/** Slices tokens.css into the block following a `@tokens <name>` marker. */
 const block = (name: string): string => {
-  // The trailing space matters: it stops "light" from matching "light-fallback".
   const marker = `@tokens ${name} `
   const start = tokensCss.indexOf(marker)
   assert.ok(start >= 0, `tokens.css is missing the "${marker.trim()}" marker`)
@@ -29,7 +21,6 @@ const block = (name: string): string => {
   return next === -1 ? rest : rest.slice(0, next)
 }
 
-/** Parses `--name: value;` declarations out of a chunk of CSS. */
 const declarations = (source: string): Map<string, string> => {
   const found = new Map<string, string>()
   for (const match of source.matchAll(/(--[\w-]+)\s*:\s*([^;]+);/g)) {
@@ -150,8 +141,6 @@ describe('palette discipline', () => {
   })
 
   test('there is no red *text* token, because red text is not legible enough', () => {
-    // Danger is always a filled block with near-black ink. If a danger-text
-    // token reappears it must come with a contrast measurement.
     assert.equal(shared.get('--nes-red-ink'), undefined)
     assert.equal(dark.get('--danger-text'), undefined)
     assert.equal(light.get('--danger-text'), undefined)
@@ -178,13 +167,10 @@ describe('pixel geometry', () => {
       const sanctioned =
         shadow.includes('var(--shadow-hard)') ||
         shadow.startsWith('inset ') ||
-        // Removing a shadow is always allowed.
         shadow === 'none' ||
-        // The pressed state: the hard shadow collapses to nothing.
         shadow === '0 0 0 0 var(--shadow-color)'
       assert.ok(sanctioned, `unsanctioned shadow: "${shadow}"`)
     }
-    // A hard offset with a zero blur radius: the whole point of the NES look.
     assert.ok(allCss.includes('--shadow-hard: 4px 4px 0 0'))
   })
 })
@@ -213,17 +199,8 @@ describe('the CRT overlay stays an atmosphere', () => {
   })
 })
 
-/* ==========================================================================
-   Contrast, computed from the token values themselves.
-
-   These are the claims in the tokens.css header comment, verified rather than
-   asserted. Everything the resolver needs is in the palette, so the whole thing
-   is arithmetic on the stylesheet — no browser, no dependencies.
-   ========================================================================== */
-
 type Rgb = [number, number, number]
 
-/** Resolves a token to sRGB channels, following `var()` and `color-mix()`. */
 const resolveColor = (tokens: Map<string, string>, name: string, depth = 0): Rgb => {
   assert.ok(depth < 10, `token ${name} is circular`)
   const value = tokens.get(name) ?? shared.get(name)
@@ -248,7 +225,6 @@ const resolveColor = (tokens: Map<string, string>, name: string, depth = 0): Rgb
   if (mix?.[1] !== undefined && mix[2] !== undefined && mix[3] !== undefined) {
     const first = resolveColor(tokens, mix[1], depth + 1)
     const second = resolveColor(tokens, mix[3], depth + 1)
-    // `in srgb` interpolates the gamma-encoded channels, per the colour spec.
     const weight = Number(mix[2]) / 100
     return first.map(
       (channel, index) => channel * weight + (second[index] ?? 0) * (1 - weight),
@@ -291,7 +267,6 @@ describe('contrast', () => {
   test('the resolver handles hex, var() and color-mix()', () => {
     assert.deepEqual(resolveColor(dark, '--dmg-0'), [15, 56, 15])
     assert.deepEqual(resolveColor(dark, '--bg'), [8, 20, 8])
-    // 88% of shade 0 over shade 3.
     const mixed = resolveColor(light, '--fg-muted')
     assert.ok(Math.abs(mixed[0] - 31.8) < 0.01)
     assert.ok(Math.abs(mixed[1] - 71.84) < 0.01)

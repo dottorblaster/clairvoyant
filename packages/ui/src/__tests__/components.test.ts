@@ -18,11 +18,9 @@ import {
 const render = (element: Parameters<typeof renderToStaticMarkup>[0]): string =>
   renderToStaticMarkup(element)
 
-/** Pulls the first value of an attribute out of rendered markup. */
 const attribute = (markup: string, name: string): string | undefined =>
   markup.match(new RegExp(`${name}="([^"]*)"`))?.[1]
 
-/** The element's class list, so tests do not depend on class ordering. */
 const classes = (markup: string): string[] =>
   (attribute(markup, 'class') ?? '').split(/\s+/).filter(Boolean)
 
@@ -241,11 +239,8 @@ describe('VisuallyHidden', () => {
 })
 
 describe('Modal', () => {
-  // `children` is a required prop on Modal, so it has to be satisfied by the
-  // props object: React's createElement types will not accept it as a variadic
-  // argument when the prop itself is required.
   const markup = render(
-    // biome-ignore lint/correctness/noChildrenProp: see the note above.
+    // biome-ignore lint/correctness/noChildrenProp: createElement passes children through props.
     createElement(Modal, { title: 'Invite someone', onClose: () => {}, children: 'content' }),
   )
 

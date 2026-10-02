@@ -4,19 +4,10 @@ import { cx } from '../lib/cx.js'
 
 export interface PixelIconProps extends SVGProps<SVGSVGElement> {
   name: IconName
-  /** Rendered size in px. Multiples of 8 (16, 24, 32) stay perfectly crisp. */
   size?: number
-  /**
-   * Accessible name. Omit it for decorative icons — the icon is then hidden from
-   * assistive technology and the surrounding text carries the meaning.
-   */
   title?: string
 }
 
-/**
- * Flattens a grid into `[x, y]` offsets of its painted pixels. Exported because
- * it is also the cheapest way to assert an icon's shape in tests.
- */
 export const paintedPixels = (grid: readonly string[]): Array<[number, number]> => {
   const pixels: Array<[number, number]> = []
   grid.forEach((row, y) => {
@@ -27,14 +18,6 @@ export const paintedPixels = (grid: readonly string[]): Array<[number, number]> 
   return pixels
 }
 
-/**
- * Renders one sprite from `ICON_GRIDS` as hard-edged SVG squares on an 8x8 grid.
- * Inherits `currentColor`, so it follows whatever text colour it is placed in.
- *
- * A decorative icon and a labelled icon are two different things, so they are
- * two explicit branches rather than one element with conditional ARIA
- * attributes. That keeps both cases statically checkable and unambiguous.
- */
 export const PixelIcon = ({ name, size = 16, title, className, ...rest }: PixelIconProps) => {
   const titleId = useId()
 

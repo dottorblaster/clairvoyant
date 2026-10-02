@@ -3,25 +3,12 @@ import { Button } from './Button.js'
 
 export interface ModalProps {
   title: ReactNode
-  /** Called for Escape, the backdrop, and the close control. */
   onClose: () => void
   children: ReactNode
   closeLabel?: string
-  /** Element to focus on open. Defaults to the dialog itself. */
   initialFocusRef?: RefObject<HTMLElement | null>
 }
 
-/**
- * A modal dialog drawn as an NES dialog box.
- *
- * The backdrop is a real `<button>`, so "click outside to dismiss" is also
- * reachable by keyboard. Opening locks body scroll, moves focus into the dialog,
- * and closing restores focus to whatever had it before.
- *
- * Known limitation: this does not trap Tab inside the dialog (no focus trap).
- * Everything behind the backdrop is still tabbable. Fine for a single dialog in
- * a small app; swap in a focus-trap primitive before stacking dialogs.
- */
 export const Modal = ({
   title,
   onClose,
@@ -37,7 +24,6 @@ export const Modal = ({
     const previousOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
 
-    // `tabIndex={-1}` on the dialog makes it a valid fallback focus target.
     const target = initialFocusRef?.current ?? dialogRef.current
     target?.focus()
 

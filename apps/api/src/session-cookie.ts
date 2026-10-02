@@ -1,10 +1,8 @@
+// The cookie carries only the user DID. It is HMAC-signed so a client cannot
+// forge another user's DID, and it is not an access token: the OAuth session
+// (DPoP keys included) stays server-side.
 import { createHmac, timingSafeEqual } from 'node:crypto'
 
-/**
- * The browser cookie carries ONLY the user DID. It is HMAC-signed so a client
- * cannot forge another user's DID, but it is not an access token: the OAuth
- * session (including DPoP keys) stays server-side in Postgres.
- */
 const encode = (value: string): string => Buffer.from(value, 'utf8').toString('base64url')
 
 const decode = (value: string): string => Buffer.from(value, 'base64url').toString('utf8')

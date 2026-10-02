@@ -9,7 +9,6 @@ import {
 } from '../dist/index.js'
 
 afterEach(async () => {
-  // `startTelemetry` is idempotent per process; reset it between tests.
   await shutdownTelemetry()
 })
 

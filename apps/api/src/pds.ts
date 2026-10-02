@@ -3,11 +3,6 @@ import { RSVP_COLLECTION } from '@clairvoyant/lexicons'
 import { withSpan } from '@clairvoyant/telemetry'
 import type { OAuthClient } from './oauth/client.js'
 
-/**
- * The subset of the atproto repo API this app uses, narrowed to what the routes
- * actually need. Keeping it small makes the routes testable with a fake and
- * keeps `@atproto/api` out of the handlers.
- */
 export interface PdsAgent {
   listRecords(input: {
     collection: string
@@ -27,11 +22,6 @@ export interface PdsAgent {
   resolveHandle(handle: string): Promise<string>
 }
 
-/**
- * Restores the signed-in user's OAuth session and hands the caller an agent
- * scoped to their repo. The session (including DPoP keys) lives server-side; the
- * browser only ever holds a DID cookie.
- */
 export interface PdsPort {
   withAgent<T>(did: string, run: (agent: PdsAgent) => Promise<T>): Promise<T>
 }
@@ -94,11 +84,7 @@ export const createPdsPort = (oauth: OAuthClient): PdsPort => ({
 
 export type RsvpStatus = 'going' | 'notgoing' | 'interested'
 
-/**
- * Find the rkey of the user's existing RSVP for this event, if any. The lexicon
- * declares a `tid` key, but re-using the existing rkey keeps exactly one RSVP
- * per (user, event) instead of piling up duplicates.
- */
+// Reuse the existing rkey so a user has one RSVP per event instead of duplicates.
 export const findExistingRsvpRkey = async (
   agent: PdsAgent,
   eventUri: string,
@@ -126,7 +112,7 @@ export const findExistingRsvpRkey = async (
   return null
 }
 
-/** Write an RSVP record to the user's PDS (never to our database). */
+// The RSVP is written to the user's own PDS, never to our database.
 export const writeRsvpRecord = async (
   agent: PdsAgent,
   eventUri: string,

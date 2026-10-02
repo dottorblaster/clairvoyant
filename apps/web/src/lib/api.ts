@@ -12,7 +12,6 @@ export class ApiError extends Error {
   }
 }
 
-/** The response shape `request` needs; keeps the fake fetch trivial. */
 export interface FetchResponseLike {
   ok: boolean
   status: number
@@ -33,20 +32,14 @@ export interface ApiConfig {
   baseUrl: string
 }
 
-// These mirror the shapes returned by apps/api (which in turn mirror the
-// `@clairvoyant/db` row types). Lexicon collection identifiers come from the
-// generated `@clairvoyant/lexicons` package.
 export interface EventRow {
   uri: string
   cid: string
   author_did: string
   name: string
-  /** Optional in the lexicon, so the index really can hold an undated event. */
   starts_at: string | null
   ends_at: string | null
-  /** Optional in the lexicon; projected to its own column by the indexer. */
   description: string | null
-  /** The record's `locations` union array, projected to a JSONB column. */
   locations: unknown
   indexed_at: string
   raw: unknown
@@ -57,20 +50,13 @@ export interface RsvpRow {
   cid: string
   author_did: string
   subject_uri: string
-  /** Verbatim network value, e.g. `community.lexicon.calendar.rsvp#going`. */
   status: string
-  /**
-   * Normalised name the UI should render, or `null` when the network sent a
-   * value this lexicon version does not know about.
-   */
   status_name: RsvpStatus | null
   indexed_at: string
 }
 
-/** How the viewer is connected to an event in their own list. */
 export type MyEventRole = 'hosting' | 'going' | 'interested'
 
-/** An event in "my events": something authored or RSVP'd to, with the role. */
 export type MyEventRow = EventRow & { role: MyEventRole }
 
 export interface MeResponse {
@@ -94,7 +80,6 @@ export interface InviteInfo {
   eventUri?: string
   inviteeHandle?: string
   inviterHandle?: string
-  /** null when nobody is logged in. */
   matchesViewer?: boolean | null
 }
 
@@ -107,25 +92,14 @@ export interface CreateEventInput {
 
 export interface Api {
   fetchMe(): Promise<MeResponse>
-  /**
-   * Everything the viewer is connected to: events they authored, plus events
-   * they RSVP'd "going" or "interested" to — including RSVPs made from other
-   * clients, since the index is network-wide. Each row carries a `role`.
-   */
   fetchMyEvents(): Promise<{ events: MyEventRow[] }>
-  /**
-   * The public discover feed: upcoming events, randomly sampled, topped up with
-   * recent ones. Needs no session, so the homepage works for a cold visitor.
-   */
   fetchDiscoverEvents(limit?: number): Promise<{ events: EventRow[] }>
   fetchEventRsvps(uri: string): Promise<{ event: EventRow; rsvps: RsvpRow[] }>
-  /** Writes an RSVP record to the signed-in user's PDS; the indexer projects it. */
   respondToEvent(
     uri: string,
     status: RsvpStatus,
     inviteToken: string,
   ): Promise<{ uri: string; cid: string }>
-  /** Mint a per-person invite bound to the DID behind `handle`. */
   createInvite(uri: string, handle: string): Promise<CreateInviteResponse>
   fetchInvite(token: string): Promise<InviteInfo>
   createEvent(input: CreateEventInput): Promise<{ uri: string; cid: string }>
@@ -152,9 +126,7 @@ export const createApi = ({ fetch, baseUrl }: ApiConfig): Api => {
       try {
         const body = (await response.json()) as { error?: string; message?: string }
         message = body.message ?? body.error ?? message
-      } catch {
-        // Non-JSON error body; keep the default message.
-      }
+      } catch {}
       throw new ApiError(response.status, message)
     }
 

@@ -82,7 +82,6 @@ describe('EventDetailPage', () => {
     expect(await screen.findByRole('heading', { name: 'Launch party' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'RSVPs (2)' })).toBeTruthy()
     expect(screen.getByText('going')).toBeTruthy()
-    // An unrecognised status falls back to the raw value rather than vanishing.
     expect(screen.getByText('community.lexicon.calendar.rsvp#maybe')).toBeTruthy()
     expect(screen.getByText(/rsvp is invite-only/i)).toBeTruthy()
   })
@@ -108,14 +107,12 @@ describe('EventDetailPage', () => {
 
     renderWithProviders(<EventDetailPage />, { route: ROUTE, path: PATH })
 
-    // The description is Markdown, not plain text.
     expect(await screen.findByText('celebrate')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'About' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'details' }).getAttribute('rel')).toContain('noopener')
     expect(screen.getByRole('heading', { name: 'Location' })).toBeTruthy()
     expect(screen.getByText('12 Main St, Springfield, US')).toBeTruthy()
     expect(screen.getByText('https://meet.example.com/abc')).toBeTruthy()
-    // Sharing is public; only inviting requires a session.
     expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Invite' })).toBeNull()
   })

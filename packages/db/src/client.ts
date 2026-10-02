@@ -4,7 +4,6 @@ import type { DB } from './schema.js'
 
 export interface CreateDbOptions {
   connectionString: string
-  // Maximum size of the underlying `pg` connection pool
   max?: number
 }
 

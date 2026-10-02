@@ -25,7 +25,6 @@ const getHeader = (name: string, candidate: CandidateError): string | null => {
   return null
 }
 
-/** Parse a `Retry-After` value (seconds or an HTTP-date) into milliseconds. */
 export const getRetryAfter = (retryAfter: string | null): number | undefined => {
   if (retryAfter) {
     const seconds = Number(retryAfter)
@@ -44,7 +43,6 @@ export const getRetryAfter = (retryAfter: string | null): number | undefined => 
   return undefined
 }
 
-/** Best-effort extraction of HTTP status / Retry-After from an unknown throw. */
 export const classifyError = (error: unknown): HttpErrorInfo => {
   if (typeof error !== 'object' || error === null) {
     return {}
@@ -64,20 +62,13 @@ export const classifyError = (error: unknown): HttpErrorInfo => {
   return retryAfterMs === undefined ? { status } : { status, retryAfterMs }
 }
 
-/** Double the wait, capped. */
 export const nextBackoffMs = (current: number): number => Math.min(current * 2, MAX_BACKOFF_MS)
 
 export type FailureDecision =
   | { action: 'fatal'; status: number }
   | { action: 'wait'; waitMs: number; nextBackoffMs: number; rateLimited: boolean }
 
-/**
- * Turn a stream failure into what the run loop should do next.
- *
- *   401 — the API key is wrong; the indexer cannot make progress, so stop.
- *   429 — rate limited: honour `Retry-After` when present, then back off.
- *   anything else — back off exponentially from the current wait.
- */
+// 401 is fatal (bad API key), 429 honours Retry-After, anything else backs off.
 export const decideOnFailure = (error: unknown, backoff: number): FailureDecision => {
   const info = classifyError(error)
 

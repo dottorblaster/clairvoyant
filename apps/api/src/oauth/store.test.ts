@@ -25,7 +25,6 @@ interface FakeBuilder {
   execute(): Promise<void>
 }
 
-/** Minimal Kysely stand-in covering the SimpleStore get/set/del shape. */
 const fakeDb = (row?: { value: unknown }) => {
   const calls: Calls = {
     selectFrom: [],

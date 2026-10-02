@@ -1,19 +1,7 @@
-/* ==========================================================================
-   Clairvoyant UI — markdown prose
-   Styles the output of the Markdown renderer used for event descriptions.
-   Scoped to `.markdown` so it never leaks into the rest of the app.
-
-   Raw HTML is not rendered (see apps/web `Markdown`), so only the elements
-   Markdown itself emits need styling.
-   ========================================================================== */
-
 .markdown {
-  /* Long words and bare URLs must not blow out the panel width. */
   overflow-wrap: anywhere;
 }
 
-/* The base layer removes default margins, so restore gaps between block
-   children only. */
 .markdown > * + * {
   margin-top: var(--space-3);
 }
@@ -22,8 +10,6 @@
   margin-top: 0;
 }
 
-/* The panel title is the page's h1, so the renderer maps Markdown headings one
-   level down; these tune the sizes the base layer already sets. */
 .markdown h2 {
   font-size: var(--text-lg);
 }

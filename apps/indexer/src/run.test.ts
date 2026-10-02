@@ -33,9 +33,7 @@ interface HarnessOptions {
   cursor?: number
   env?: Partial<Env>
   script?: ScriptStep[]
-  /** Abort the run after this many sleeps have happened. */
   abortAfterSleeps?: number
-  /** Abort after this many cursor writes. */
   abortAfterWrites?: number
   fetchTip?: () => Promise<number>
 }

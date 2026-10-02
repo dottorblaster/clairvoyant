@@ -2,9 +2,7 @@ import { Button } from '@clairvoyant/ui'
 import { useState } from 'react'
 
 export interface ShareButtonProps {
-  /** Absolute URL to share. Must not carry an invite token. */
   url: string
-  /** Title handed to the native share sheet. */
   title: string
 }
 
@@ -17,20 +15,11 @@ type NativeShare = (data: ShareData) => Promise<void>
 
 const COPY_FEEDBACK_MS = 1_500
 
-/**
- * `navigator.share` is not present in every DOM lib/@types combination, so it is
- * read through a narrow structural check instead of relying on `lib.dom`.
- */
 const nativeShare = (): NativeShare | null => {
   const candidate = (navigator as { share?: unknown }).share
   return typeof candidate === 'function' ? (candidate as NativeShare) : null
 }
 
-/**
- * Shares the current event link. Uses the native share sheet where the browser
- * has one, and otherwise copies the link to the clipboard with a short "Copied"
- * confirmation.
- */
 export const ShareButton = ({ url, title }: ShareButtonProps) => {
   const [copied, setCopied] = useState(false)
 
@@ -54,8 +43,7 @@ export const ShareButton = ({ url, title }: ShareButtonProps) => {
     }
 
     share({ title, url }).catch((error: unknown) => {
-      // Dismissing the share sheet rejects with AbortError: that is a deliberate
-      // "no", not a failure, so we must not silently copy instead.
+      // Dismissing the share sheet rejects with AbortError; that is a "no", not a failure.
       if (error instanceof Error && error.name === 'AbortError') return
       copy()
     })

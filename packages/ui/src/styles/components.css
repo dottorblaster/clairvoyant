@@ -1,24 +1,3 @@
-/* ==========================================================================
-   Clairvoyant UI — components
-   ==========================================================================
-
-   Two shape rules run through everything:
-
-   1. **Outlined** surfaces (panels, buttons, inputs) use hard 2px borders and a
-      4px offset hard shadow. A clip path would eat the border at the corners,
-      so outlined shapes are never notched.
-   2. **Filled** surfaces (primary/danger buttons, filled notices, badges in ink)
-      are notched with `--clip-notch` and carry no border, so the notch edge is
-      clean and the shape reads as a solid 8-bit chip.
-
-   Both rules keep a visible outline in a forced-colors / clip-path-less
-   environment, because the outlined variants are plain borders.
-   ========================================================================== */
-
-/* ==========================================================================
-   Panel — the primary surface
-   ========================================================================== */
-
 .panel {
   display: flex;
   flex-direction: column;
@@ -29,8 +8,6 @@
   box-shadow: var(--shadow-hard) var(--shadow-color);
 }
 
-/* The inverted "dialog box" title bar. Bleeds to the panel edges because the
-   panel is a flex column and the body carries the padding. */
 .panel__header {
   display: flex;
   flex-wrap: wrap;
@@ -62,15 +39,10 @@
   min-width: 0;
 }
 
-/* Opt-out for full-bleed content such as a bordered list. */
 .panel__body--flush {
   padding: 0;
   gap: 0;
 }
-
-/* ==========================================================================
-   Button
-   ========================================================================== */
 
 .btn {
   display: inline-flex;
@@ -99,10 +71,6 @@
     transform var(--dur-fast) var(--ease-pixel);
 }
 
-/* --- variants (specificity 0,1,0) ------------------------------------------ */
-
-/* Filled variants: notched, borderless. Padding grows by the border width so
-   every button keeps the same height and optical weight. */
 .btn--primary,
 .btn--danger {
   border: 0;
@@ -128,24 +96,17 @@
   color: var(--fg-muted);
 }
 
-/* Declared after the variants so a square icon button keeps its padding. */
 .btn--icon {
   gap: 0;
   padding: var(--space-2);
   min-width: 38px;
 }
 
-/* --- states (specificity 0,2,0 and up) ------------------------------------
-   Deliberately ordered after every variant: in a flat cascade a lower-specificity
-   rule that comes later still loses, and this file is checked for that. */
-
 .btn:hover:not(:disabled) {
   background-color: var(--fg);
   color: var(--bg);
 }
 
-/* Press: the button travels the full offset of its own shadow, so it looks
-   like it is being pushed into the screen. */
 .btn:active:not(:disabled) {
   transform: translate(var(--shadow-offset), var(--shadow-offset));
   box-shadow: 0 0 0 0 var(--shadow-color);
@@ -177,10 +138,6 @@
   transform: none;
 }
 
-/* --- context overrides (highest specificity) -------------------------------
-   A ghost button on the inverted title bar inverts against the bar, not the
-   page. Declared last so it wins over the generic ghost rules above. */
-
 .panel__header .btn--ghost {
   color: inherit;
 }
@@ -196,10 +153,6 @@
     transition: none;
   }
 }
-
-/* ==========================================================================
-   Form fields
-   ========================================================================== */
 
 .field {
   display: flex;
@@ -221,8 +174,6 @@
   color: var(--fg-muted);
 }
 
-/* Field errors are the same filled danger block as a notice, for the same
-   reason: red text on these surfaces does not reach 4.5:1. */
 .field__error {
   display: flex;
   align-items: flex-start;
@@ -251,7 +202,7 @@
   color: var(--fg);
   font-family: var(--font-text);
   font-size: var(--text-md);
-  /* A hard inner bevel in the shadow colour: the LCD "well". */
+
   box-shadow: inset var(--border-w) var(--border-w) 0 0 var(--shadow-color);
 }
 
@@ -283,10 +234,6 @@
   resize: vertical;
 }
 
-/* ==========================================================================
-   Badge
-   ========================================================================== */
-
 .badge {
   display: inline-flex;
   align-items: center;
@@ -315,10 +262,6 @@
   border-color: var(--border);
   color: var(--fg-muted);
 }
-
-/* ==========================================================================
-   Notice
-   ========================================================================== */
 
 .notice {
   display: flex;
@@ -350,8 +293,6 @@
   letter-spacing: var(--track-wide);
 }
 
-/* Errors are a filled red block with near-black ink: unmistakable, and it keeps
-   the accent legible without putting red text on a green screen. */
 .notice--error {
   border: 0;
   background-color: var(--danger-bg);
@@ -372,10 +313,6 @@
   border-color: var(--fg);
 }
 
-/* ==========================================================================
-   Loading
-   ========================================================================== */
-
 .loading {
   display: flex;
   align-items: center;
@@ -387,10 +324,6 @@
   color: var(--fg-muted);
 }
 
-/* ==========================================================================
-   Modal
-   ========================================================================== */
-
 .modal-root {
   position: fixed;
   inset: 0;
@@ -400,9 +333,6 @@
   padding: var(--space-4);
 }
 
-/* The overlay is a real <button> so clicking outside closes the dialog and the
-   action is reachable from the keyboard. The checkerboard dither keeps the
-   backdrop in-palette instead of a smooth modern scrim. */
 .modal-overlay {
   position: absolute;
   inset: 0;
@@ -425,8 +355,7 @@
   flex-direction: column;
   width: min(34rem, 100%);
   max-height: calc(100vh - var(--space-6));
-  /* The dialog itself does not scroll: the title bar stays put and only the
-     body scrolls. `min-height: 0` is what lets the flex child shrink. */
+
   overflow: hidden;
   background-color: var(--surface);
   border: var(--border-w) solid var(--border-strong);
@@ -438,10 +367,6 @@
   overflow: auto;
   min-height: 0;
 }
-
-/* ==========================================================================
-   App chrome
-   ========================================================================== */
 
 .app-shell {
   max-width: 62rem;
@@ -497,10 +422,6 @@
   text-decoration: none;
 }
 
-/* The underline is a pseudo-element, not a border, so it does not change the
-   link's box height. As `padding-bottom` + `border-bottom` it made every nav
-   link 5px taller than the brand and the buttons, and the header's
-   `align-items: center` then centred their text ~3px too high. */
 .nav-link::after {
   content: "";
   position: absolute;
@@ -520,8 +441,6 @@
   background-color: var(--fg-muted);
 }
 
-/* NavLink sets aria-current, so the active state is driven by semantics rather
-   than by a class the caller has to remember to add. */
 .nav-link[aria-current="page"]::after {
   background-color: var(--fg);
 }
@@ -535,17 +454,12 @@
   min-width: 0;
 }
 
-/* Handles are short, DIDs are not. Truncate rather than wrap the header. */
 .app-account__identity {
   max-width: 22ch;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
 }
-
-/* ==========================================================================
-   Data list
-   ========================================================================== */
 
 .data-list {
   list-style: none;

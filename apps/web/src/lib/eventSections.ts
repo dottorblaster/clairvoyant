@@ -4,11 +4,6 @@ export interface EventSections<T> {
   undated: T[]
 }
 
-/**
- * Split a list of events into the three sections "my events" renders. The API
- * already ordered them, so a single pass in order preserves that order. An event
- * starting exactly at `now` counts as upcoming.
- */
 export const partitionEventsByStart = <T extends { starts_at: string | null }>(
   events: readonly T[],
   now: Date,

@@ -1,15 +1,7 @@
-/**
- * `startsAt` is optional in `community.lexicon.calendar.event` — only `createdAt`
- * and `name` are required — so an indexed event really can have no date. Every
- * formatter here has to cope with that instead of rendering the epoch.
- *
- * `locale`/`timeZone` are injectable so tests are deterministic; both default to
- * the environment's choice, which is what the app wants.
- */
+// startsAt is optional in the lexicon, so every formatter has to cope with an undated event.
 const instant = (value: string, locale?: string, timeZone?: string): string =>
   new Date(value).toLocaleString(locale, timeZone === undefined ? undefined : { timeZone })
 
-/** `"18/03/2026, 19:00 – 18/03/2026, 22:00"`, or just the start when open-ended. */
 export const formatEventWindow = (
   startsAt: string | null,
   endsAt: string | null,
@@ -21,7 +13,6 @@ export const formatEventWindow = (
   return `${instant(startsAt, locale, timeZone)} – ${instant(endsAt, locale, timeZone)}`
 }
 
-/** The short form used in lists: just when it starts. */
 export const formatEventStart = (
   startsAt: string | null,
   locale?: string,

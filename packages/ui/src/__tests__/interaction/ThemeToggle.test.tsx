@@ -8,7 +8,6 @@ interface MediaQueryHarness {
   listenerCount: () => number
 }
 
-/** jsdom has no `matchMedia`; this is a controllable stand-in. */
 const installMatchMedia = (initialMatches: boolean): MediaQueryHarness => {
   const listeners = new Set<() => void>()
   const query = {

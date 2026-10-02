@@ -16,13 +16,6 @@ export interface ThemeToggleProps {
   className?: string
 }
 
-/**
- * Cycles Auto -> Light -> Dark and paints `<html data-theme>`. In Auto it also
- * listens for OS changes, so an OS-level theme switch is picked up live.
- *
- * The label always names the current mode rather than the next one, which halves
- * the usual "does this button say where I am or where I am going?" confusion.
- */
 export const ThemeToggle = ({ className }: ThemeToggleProps) => {
   const [mode, setMode] = useState<ThemeMode>(readStoredThemeMode)
   const [resolved, setResolved] = useState<ResolvedTheme>(() =>

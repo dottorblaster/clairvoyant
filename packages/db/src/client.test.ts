@@ -2,11 +2,6 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import { closeDb, createDb } from '../dist/client.js'
 
-/**
- * Constructing a `Kysely` + `pg.Pool` does not open a connection, so these stay
- * unit tests. They use an unroutable address to make a real connection attempt
- * fail loudly rather than hang against a developer's database.
- */
 const UNREACHABLE = 'postgres://user:pass@127.0.0.1:1/none'
 
 describe('createDb', () => {

@@ -1,10 +1,3 @@
-/**
- * Public surface of `@clairvoyant/ui`.
- *
- * Styles are a separate entry point (`@clairvoyant/ui/styles.css`) rather than a
- * side effect of importing a component, so the app decides where the stylesheet
- * lands in its own CSS order.
- */
 export { Badge, type BadgeProps, type BadgeTone } from './components/Badge.js'
 export { Button, type ButtonProps, type ButtonVariant } from './components/Button.js'
 export { Loading, type LoadingProps } from './components/Loading.js'

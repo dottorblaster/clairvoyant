@@ -14,7 +14,6 @@ import { currentReturnTo, navigateTo } from '../lib/navigate'
 import { RESPONSE_LABEL, rsvpTone } from '../lib/roles'
 import { useMe } from '../lib/useMe'
 
-/** Where "back" goes depends on how the visitor got here: discover or their own list. */
 const BackLink = ({ toMyEvents }: { toMyEvents: boolean }) => (
   <Link to={toMyEvents ? '/events' : '/'}>
     {toMyEvents ? 'Back to my events' : 'Back to discover'}
@@ -25,14 +24,11 @@ export const EventDetailPage = () => {
   const params = useParams<{ did: string; rkey: string }>()
   const [searchParams] = useSearchParams()
 
-  // Human-readable URL: /p/<author-did>/e/<event-rkey> reconstructed back into
-  // the AT-URI the API and indexer work with.
   const did = params.did
   const rkey = params.rkey
   const eventUri = did && rkey ? buildEventUri(did, rkey) : ''
   const eventPath = did && rkey ? buildEventPath(did, rkey) : ''
-  // Built from the path, not the location, so a shared link never leaks the
-  // `?invite=` token.
+  // Built from the path, not the location, so a shared link never leaks the ?invite= token.
   const shareUrl = eventPath === '' ? '' : `${window.location.origin}${eventPath}`
   const inviteToken = searchParams.get('invite')
 
@@ -99,7 +95,6 @@ export const EventDetailPage = () => {
   }
 
   const { event, rsvps } = query.data
-  // The indexer projects these to columns, so the page never reads `raw`.
   const locations = formatEventLocations(event.locations)
   const info = invite.data
   const isInviteForMe = info?.valid === true && info.matchesViewer === true

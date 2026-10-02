@@ -10,13 +10,8 @@ export const createJetstreamClient = (options: CreateJetstreamOptions): Jetstrea
     ? new Jetstream({ service: options.service })
     : new Jetstream({ service: options.service, apiKey: options.apiKey })
 
-/**
- * Resolve the current sealed archive tip (the latest sequence number).
- *
- * `planSnapshot` with a sequence above any real tip returns an empty plan plus
- * the current `sealedTipSeq`, so this is a cheap metadata call. The public
- * Jetstream instance requires an API key on archive endpoints.
- */
+// A sequence above the tip returns an empty plan plus sealedTipSeq, so this is a
+// cheap metadata call. The archive endpoint requires the API key.
 export const fetchSealedTipSeq = async (options: CreateJetstreamOptions): Promise<number> => {
   const url = new URL('/xrpc/network.bsky.jetstream.planSnapshot', options.service)
   const response = await fetch(url, {

@@ -13,11 +13,6 @@ import {
   writeStoredThemeMode,
 } from '../../dist/index.js'
 
-/**
- * Swaps `globalThis.localStorage` for the duration of `run`, then restores
- * whatever was there (including nothing). `localStorage` throws on access in
- * some privacy modes, so a `get`-only descriptor is a legitimate case to test.
- */
 const withLocalStorage = (descriptor: PropertyDescriptor, run: () => void): void => {
   const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage')
   Object.defineProperty(globalThis, 'localStorage', { configurable: true, ...descriptor })
@@ -29,7 +24,6 @@ const withLocalStorage = (descriptor: PropertyDescriptor, run: () => void): void
   }
 }
 
-/** A stand-in for `document.documentElement` that records the theme it is given. */
 const fakeRoot = (): HTMLElement & { dataset: Record<string, string> } =>
   ({ dataset: {} }) as unknown as HTMLElement & { dataset: Record<string, string> }
 
@@ -167,7 +161,6 @@ describe('initTheme', () => {
     withLocalStorage({ value: { getItem: () => null } }, () => {
       const root = fakeRoot()
       initTheme(root)
-      // Node has no `matchMedia`, so auto can only mean dark here.
       assert.equal(root.dataset.theme, 'dark')
     })
   })

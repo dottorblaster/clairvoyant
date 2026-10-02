@@ -8,17 +8,11 @@ export type ButtonVariant = 'default' | 'primary' | 'danger' | 'ghost'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
-  /** Marks the action in flight: disables the button, sets `aria-busy`, and appends the block cursor. */
   pending?: boolean
   icon?: IconName
-  /** Square, label-less button. The label is kept for assistive technology. */
   iconOnly?: boolean
 }
 
-/**
- * Defaults to `type="button"`. That is deliberate: a bare `<button>` inside a
- * form submits it, which is almost never what a design-system button meant.
- */
 export const Button = ({
   variant = 'default',
   pending = false,

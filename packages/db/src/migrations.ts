@@ -36,7 +36,6 @@ const rsvp: Migration = {
       .addColumn('indexed_at', 'timestamptz', (c) => c.notNull().defaultTo(sql`now()`))
       .execute()
 
-    // The main query is "who is going to event X": rsvp by subject URI.
     await db.schema.createIndex('rsvp_subject_uri_idx').on('rsvp').column('subject_uri').execute()
     await db.schema.createIndex('rsvp_author_did_idx').on('rsvp').column('author_did').execute()
   },
@@ -111,8 +110,6 @@ const eventDetails: Migration = {
     await db.schema.alterTable('event').addColumn('description', 'text').execute()
     await db.schema.alterTable('event').addColumn('locations', 'jsonb').execute()
 
-    // Backfill from the record already stored, so an existing index does not
-    // need a replay to start serving these fields.
     await sql`
       update event
       set description = raw ->> 'description',

@@ -2,11 +2,6 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import { community } from '../dist/index.js'
 
-/**
- * The generated bindings are the runtime gate for the indexer: Jetstream output
- * is not cryptographically verified, so `$safeValidate` is what stands between
- * the wire and Postgres. These tests pin the contract the indexer relies on.
- */
 const event = community.lexicon.calendar.event
 const rsvp = community.lexicon.calendar.rsvp
 
@@ -83,8 +78,6 @@ describe('rsvp record validation', () => {
   })
 
   test('accepts an unknown status, because knownValues is advisory', () => {
-    // This is exactly why `packages/db` normalises both spellings instead of
-    // relying on the lexicon to restrict the value.
     assert.equal(rsvp.$safeValidate({ ...validRsvp, status: 'maybe' }).success, true)
     assert.equal(rsvp.$safeValidate({ ...validRsvp, status: 'going' }).success, true)
   })

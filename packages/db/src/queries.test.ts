@@ -48,8 +48,6 @@ describe('sampleWithoutReplacement', () => {
   })
 
   test('actually randomises rather than taking a fixed slice', () => {
-    // Over many runs every item must be reachable. A no-op shuffle (always the
-    // first N) would leave the tail items unpicked forever.
     const items = ['a', 'b', 'c', 'd', 'e', 'f']
     const seen = new Set<string>()
     for (let run = 0; run < 300; run += 1) {
@@ -65,14 +63,6 @@ describe('MAX_DISCOVER_LIMIT', () => {
     assert.ok(MAX_DISCOVER_LIMIT > 0 && MAX_DISCOVER_LIMIT <= 100)
   })
 })
-
-/* ==========================================================================
-   listDiscoverEvents, against a stub query builder.
-
-   The two-tier fallback and the limit clamp are the parts worth pinning down,
-   and both are observable without Postgres: the stub records every `limit()` it
-   is asked for and how many queries were issued.
-   ========================================================================== */
 
 interface FakeQueryBuilder {
   selectFrom: () => FakeQueryBuilder
@@ -146,18 +136,9 @@ describe('listDiscoverEvents', () => {
     await listDiscoverEvents(asDb(db), { limit: 100_000 })
 
     assert.equal(limits[0], 200, 'the candidate pool is bounded')
-    // The top-up asks for the clamped request minus what tier one already gave.
     assert.equal(limits[1], MAX_DISCOVER_LIMIT - 2)
   })
 })
-
-/* ==========================================================================
-   mergeMyEvents and sortMyEvents.
-
-   These encode the rules that the live index forced us to make explicit:
-   duplicate RSVPs with conflicting statuses, authored events the viewer also
-   RSVP'd to, and unrecognised network values.
-   ========================================================================== */
 
 const REF = 'community.lexicon.calendar.rsvp#'
 
@@ -245,8 +226,6 @@ describe('mergeMyEvents', () => {
   })
 
   test('breaks a tie on the most recently indexed RSVP', () => {
-    // Same status, so only `rsvp_indexed_at` can decide. `cid` is the field that
-    // makes the surviving row observable, since the rsvp_* columns are stripped.
     const older = {
       ...participating('at://b', 'Theirs', `${REF}going`, '2026-01-01T00:00:00Z'),
       cid: 'cid-older',

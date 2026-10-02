@@ -26,7 +26,6 @@ const EventList = ({ events }: { events: MyEventRow[] }) => (
   </ul>
 )
 
-/** Renders nothing at all when the section would be empty. */
 const Section = ({ title, events }: { title: string; events: MyEventRow[] }) =>
   events.length === 0 ? null : (
     <section className="stack stack--tight">
@@ -64,8 +63,6 @@ export const EventsPage = () => {
 
   const all = events.data?.events ?? []
 
-  // The API already ordered these (upcoming soonest-first, then past
-  // most-recent-first, then undated), so a single pass in order is enough.
   const { upcoming, past, undated } = partitionEventsByStart(all, new Date())
 
   return (

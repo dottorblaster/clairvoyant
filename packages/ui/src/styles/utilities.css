@@ -1,9 +1,3 @@
-/* ==========================================================================
-   Clairvoyant UI — utilities
-   A deliberately small set. Anything app-specific belongs in the app.
-   ========================================================================== */
-
-/* Vertical rhythm: put .stack on any container and children space themselves. */
 .stack {
   display: flex;
   flex-direction: column;
@@ -19,7 +13,6 @@
   gap: var(--space-6);
 }
 
-/* Horizontal, wrapping, baseline-aligned row. */
 .cluster {
   display: flex;
   flex-wrap: wrap;
@@ -27,7 +20,6 @@
   gap: var(--space-2);
 }
 
-/* Row pushed to the edges — a heading with an action on the right. */
 .split {
   display: flex;
   flex-wrap: wrap;
@@ -44,7 +36,6 @@
   font-size: var(--text-sm);
 }
 
-/* Opaque identifiers (DIDs, AT-URIs) must be allowed to break anywhere. */
 .mono {
   font-family: var(--font-mono);
   font-size: var(--text-sm);
@@ -56,12 +47,6 @@
   margin: 0;
   padding: 0;
 }
-
-/* ==========================================================================
-   Block cursor
-   The 8-bit "busy / you are here" marker. Hard on/off via steps(1), and it
-   stops entirely under prefers-reduced-motion.
-   ========================================================================== */
 
 .cursor-blink::after {
   content: "\258A";
@@ -88,10 +73,6 @@
   }
 }
 
-/* ==========================================================================
-   Accessibility
-   ========================================================================== */
-
 .visually-hidden {
   position: absolute;
   width: 1px;
@@ -104,15 +85,10 @@
   border: 0;
 }
 
-/* ==========================================================================
-   Opt-in shape
-   ========================================================================== */
-
 .pixel-notch {
   clip-path: var(--clip-notch);
 }
 
-/* Icons are drawn on a 1-unit grid; keep the edges hard at any scale. */
 .pixel-icon {
   display: block;
   flex: none;

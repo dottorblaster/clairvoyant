@@ -6,18 +6,10 @@ import { buildInviteUrl, normalizeHandle } from '../lib/handle'
 
 interface InviteModalProps {
   eventUri: string
-  /** Readable event path, e.g. `/p/<did>/e/<rkey>`. */
   eventPath: string
   onClose: () => void
 }
 
-/**
- * Modal that mints a per-person invite. The recipient's handle is resolved to a
- * DID server-side and baked into the token, so the link only works for them.
- *
- * Escape, backdrop dismissal, focus handling and scroll locking all come from
- * the design system's `Modal`.
- */
 export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) => {
   const [handle, setHandle] = useState('')
   const [inviteeHandle, setInviteeHandle] = useState('')

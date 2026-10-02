@@ -14,15 +14,9 @@ const DEFAULT_ICON: Record<NoticeTone, IconName | null> = {
 export interface NoticeProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
   tone?: NoticeTone
   title?: ReactNode
-  /** Overrides the default icon for the tone. `null` removes it. */
   icon?: IconName | null
 }
 
-/**
- * Inline message block. `error` renders as a filled red chip and gets
- * `role="alert"`, so failures are announced; the other tones are static and stay
- * silent so they do not interrupt a screen reader mid-sentence.
- */
 export const Notice = ({
   tone = 'info',
   title,

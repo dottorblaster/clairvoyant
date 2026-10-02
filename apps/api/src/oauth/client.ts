@@ -14,7 +14,6 @@ export const createOAuthClient = (env: Env, db: Kysely<DB>): NodeOAuthClient => 
     clientMetadata: buildClientMetadata(env),
     stateStore,
     sessionStore,
-    // Loopback development talks to a local PDS over plain HTTP.
     allowHttp: env.OAUTH_MODE === 'loopback',
   })
 }

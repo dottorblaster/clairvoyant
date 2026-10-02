@@ -8,12 +8,6 @@ import { oauthRoutes } from './routes/oauth.js'
 import { createSecurityHeaders } from './security-headers.js'
 import { parseSession } from './session-cookie.js'
 
-/**
- * Every request body this API accepts is a small JSON document (the largest is
- * a 2000-character event description), so anything above this is rejected up
- * front rather than parsed. Checked against `Content-Length` when present and
- * by streaming when it is not.
- */
 export const MAX_BODY_BYTES = 32 * 1024
 
 const READINESS_TIMEOUT_MS = 2_000
@@ -35,9 +29,6 @@ const withTimeout = async (promise: Promise<void>, ms: number): Promise<void> =>
 export const createApp = (deps: AppDeps): Hono<HonoEnv> => {
   const app = new Hono<HonoEnv>()
 
-  // One server span plus `http.server.request.duration` per request, with the
-  // Hono route pattern as `http.route`. A no-op unless a tracer provider is
-  // registered, so this is safe to mount unconditionally.
   app.use(httpInstrumentationMiddleware())
 
   app.use('*', createSecurityHeaders(deps.env))
@@ -57,13 +48,11 @@ export const createApp = (deps: AppDeps): Hono<HonoEnv> => {
     }),
   )
 
-  // Dependencies are injected per-request rather than kept in module state.
   app.use('*', async (c, next) => {
     c.set('deps', deps)
     await next()
   })
 
-  // Resolve the signed session cookie (DID only) into `c.get('did')`.
   app.use('*', async (c, next) => {
     const cookie = getCookie(c, deps.env.COOKIE_NAME)
     c.set('did', parseSession(deps.env.COOKIE_SECRET, cookie))

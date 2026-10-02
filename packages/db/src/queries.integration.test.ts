@@ -144,9 +144,7 @@ suite('db queries (Postgres integration)', () => {
     await upsertRsvp(testDb.db, rsvpInput('at://r/1', 'at://a/going', `${REF}going`))
     await upsertRsvp(testDb.db, rsvpInput('at://r/2', 'at://a/bare', 'interested'))
     await upsertRsvp(testDb.db, rsvpInput('at://r/3', 'at://a/declined', `${REF}notgoing`))
-    // Orphan: points at an event that was never indexed.
     await upsertRsvp(testDb.db, rsvpInput('at://r/4', 'at://a/missing', `${REF}going`))
-    // Someone else's RSVP.
     await upsertRsvp(testDb.db, rsvpInput('at://r/5', 'at://a/going', `${REF}going`, OTHER))
 
     const rows = await listEventsForParticipant(testDb.db, VIEWER)
@@ -169,7 +167,6 @@ suite('db queries (Postgres integration)', () => {
     assert.equal(byUri.get('at://r/ref')?.status_name, 'going')
     assert.equal(byUri.get('at://r/bare')?.status_name, 'interested')
     assert.equal(byUri.get('at://r/unknown')?.status_name, null)
-    // Verbatim status is preserved for fidelity.
     assert.equal(byUri.get('at://r/ref')?.status, `${REF}going`)
   })
 

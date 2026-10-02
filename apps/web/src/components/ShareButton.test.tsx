@@ -32,7 +32,6 @@ describe('ShareButton', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Share' }))
 
     await waitFor(() => expect(share).toHaveBeenCalledWith({ title: TITLE, url: URL }))
-    // The label is unchanged: the native sheet carries the feedback.
     expect(screen.getByRole('button', { name: 'Share' })).toBeTruthy()
   })
 

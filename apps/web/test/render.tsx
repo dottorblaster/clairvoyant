@@ -5,7 +5,6 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import type { FetchInitLike } from '../src/lib/api'
 
 export interface StubRoute {
-  /** Exact string match or a regular expression against the request URL. */
   path: string | RegExp
   method?: string
   status?: number
@@ -17,13 +16,6 @@ export interface StubCall {
   init: FetchInitLike
 }
 
-/**
- * Replace `globalThis.fetch` with a URL-routing stub. Returns the recorded
- * calls. `test/setup.ts` restores the real fetch after every test.
- *
- * An unmatched request throws, so a page that starts calling a new endpoint
- * fails loudly instead of silently rendering an empty state.
- */
 export const installFetchStub = (routes: StubRoute[]): { calls: StubCall[] } => {
   const calls: StubCall[] = []
 
@@ -61,13 +53,10 @@ export const installFetchStub = (routes: StubRoute[]): { calls: StubCall[] } => 
 }
 
 interface RenderOptions {
-  /** Initial history entry. */
   route?: string
-  /** Route pattern the component is rendered at; defaults to a catch-all. */
   path?: string
 }
 
-/** Render a page with a fresh QueryClient and a MemoryRouter. */
 export const renderWithProviders = (
   ui: ReactElement,
   { route = '/', path = '*' }: RenderOptions = {},
@@ -89,7 +78,6 @@ export const renderWithProviders = (
   )
 }
 
-/** Render arbitrary routed children (for multi-route navigation assertions). */
 export const renderRoutes = (
   children: ReactNode,
   { route = '/' }: { route?: string } = {},

@@ -1,4 +1,3 @@
-/** NSIDs this application indexes. Kept here so every app shares one source. */
 export const EVENT_COLLECTION = 'community.lexicon.calendar.event'
 export const RSVP_COLLECTION = 'community.lexicon.calendar.rsvp'
 

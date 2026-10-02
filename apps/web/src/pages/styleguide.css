@@ -1,7 +1,3 @@
-/* Styles for the development-only style guide.
-   Kept out of @clairvoyant/ui on purpose: these are the demo's own layout, not
-   part of the design system. */
-
 .sg-swatches {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));

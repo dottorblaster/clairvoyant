@@ -32,7 +32,6 @@ suite('migrations (Postgres integration)', () => {
   })
 
   test('down reverts every migration and up rebuilds every table', async () => {
-    // The helper migrated up, so walk every migration all the way back down.
     for (let i = 0; i < MIGRATION_COUNT; i += 1) {
       await runMigrations(testDb.db, 'down')
     }

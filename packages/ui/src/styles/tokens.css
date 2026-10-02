@@ -1,76 +1,14 @@
-/* ==========================================================================
-   Clairvoyant UI — design tokens
-   ==========================================================================
-
-   Direction: **Game Boy DMG chrome, NES geometry.**
-
-   - The colour system is the 4-shade DMG LCD ramp (olive/green monochrome).
-     Nothing else is a colour except ONE accent: NES red, spent solely on
-     failure. A monochrome ramp cannot distinguish success from error, so we
-     spend exactly one hue on that and keep everything else on the ramp.
-   - The light theme *is* the DMG screen (shade-3 background, shade-0 ink); the
-     dark theme is the same screen at night, on an off-ramp near-black backdrop
-     so all four shades still sit above the page. Both are fully specified.
-   - Geometry is NES: 2px hard outlines, zero corner radius, a 4px notch cut out
-     of filled shapes, 4px-hard offset shadows. Nothing is rounded and nothing is
-     blurred except the CRT vignette.
-
-   Layout of this file
-   -------------------
-   `:root` holds the theme-independent tokens (type, space, geometry, motion,
-   layers). The three colour themes that follow are each preceded by a
-   `@tokens <name>` marker comment, which `tokens.test.ts` uses to slice the file
-   into blocks:
-
-     dark            the default theme
-     light-fallback  first-paint values for a light-preferring OS
-     light           what the in-app toggle writes
-
-   The light theme is declared twice on purpose — once for the pre-JS first paint
-   and once for the explicit `data-theme` override — and the test suite asserts
-   both blocks declare the same tokens with the same values, so they cannot
-   silently drift. That test is the reason the duplication is acceptable.
-
-   Contrast (WCAG 2.1, measured, not estimated)
-   --------------------------------------------
-                                     dark      light
-     body ink on surface ...........  8.6:1     8.6:1
-     muted ink on surface ..........  5.1:1     4.8:1
-     ink on input well .............  8.9:1     5.1:1
-     control outlines ..............  7.3:1     6.0:1   (needs >= 3:1)
-     ink on a filled danger block ..  5.0:1     5.0:1
-
-   Note there is deliberately no "danger text colour" token. Red text on the
-   dark surface measures only 3.5:1, so danger is *always* rendered as a filled
-   block with near-black ink instead. That is both accessible and a rule the
-   system can state in one line.
-   ========================================================================== */
-
 :root {
-  /* ---- raw palette -------------------------------------------------------
-     The DMG ramp. Shade 0 is the darkest ink, shade 3 the lightest screen. */
   --dmg-0: #0f380f;
   --dmg-1: #306230;
   --dmg-2: #8bac0f;
   --dmg-3: #9bbc0f;
 
-  /* The single accent. NES red, and nothing else. */
   --nes-red: #f83800;
 
-  /* Off-ramp near-blacks. The DMG ramp assumes shade 0 is the darkest thing on
-     screen; a dark theme needs a backdrop below it so panels still read as
-     raised. These two plus the accent are the only colours outside the ramp. */
   --crt-0: #081408;
   --crt-1: #041004;
 
-  /* ---- type --------------------------------------------------------------
-     Zero new dependencies: no webfont is shipped, so both roles resolve to the
-     system monospace stack. The display role is separated by case, weight and
-     tracking rather than by face.
-
-     To adopt a real pixel font, point `--font-pixel` at it (for example
-     `"Press Start 2P", monospace`) and self-host the file. That single line is
-     the whole seam: every heading, label, button and nav item follows it. */
   --font-mono:
     ui-monospace, sfmono-regular, "SF Mono", Menlo, Consolas, "DejaVu Sans Mono", monospace;
   --font-pixel: var(--font-mono);
@@ -89,7 +27,6 @@
   --leading-tight: 1.15;
   --leading-normal: 1.6;
 
-  /* ---- space: a strict 4px grid ------------------------------------------ */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -98,16 +35,12 @@
   --space-6: 32px;
   --space-7: 48px;
 
-  /* ---- geometry ---------------------------------------------------------- */
   --border-w: 2px;
   --notch: 4px;
   --radius: 0px;
   --shadow-hard: 4px 4px 0 0;
   --shadow-offset: 4px;
 
-  /* A single pixel-rounded silhouette: a 4x4 square is cut out of each corner.
-     Only *filled* shapes use it. An outlined shape would have its border sliced
-     off at the corners, so outlined shapes use hard borders instead. */
   --clip-notch: polygon(
     0 var(--notch),
     var(--notch) var(--notch),
@@ -123,17 +56,10 @@
     0 calc(100% - var(--notch))
   );
 
-  /* ---- motion ------------------------------------------------------------
-     Transitions are quantised with `steps()` so a state change lands in discrete
-     frames instead of easing. That is what makes a hover read as 8-bit rather
-     than as a web app wearing a pixel font. */
   --dur-fast: 90ms;
   --dur-base: 160ms;
   --ease-pixel: steps(2, end);
 
-  /* ---- layers -----------------------------------------------------------
-     Scanlines sit below the modal layer, so dialogs stay crisp. The CRT is
-     atmosphere, not something to read through. */
   --z-scanlines: 90;
   --z-modal: 100;
 }

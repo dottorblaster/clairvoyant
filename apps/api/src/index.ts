@@ -18,7 +18,6 @@ export interface Runtime {
   deps: AppDeps
 }
 
-/** Wire the production dependencies from the environment. */
 export const createRuntime = (env: Env = loadEnv()): Runtime => {
   const log = createLogger(env.LOG_LEVEL, { app: 'api' })
   const db = createDb({ connectionString: env.DATABASE_URL })
@@ -43,10 +42,6 @@ export interface ClosableServer {
   close(callback: (error?: Error) => void): void
 }
 
-/**
- * Build the graceful-shutdown handler. Kept separate from `process.once` so a
- * test can invoke it with a fake server/db/exit and no real signals.
- */
 export const createShutdown = (
   server: ClosableServer,
   db: Kysely<DB>,
@@ -63,7 +58,6 @@ export const createShutdown = (
     server.close((error) => {
       if (error) log.error('error closing http server', { err: error })
       closeDb(db)
-        // Flush spans and metrics before the process goes away.
         .then(() => shutdownTelemetry())
         .then(() => {
           log.info('api stopped')
@@ -78,7 +72,6 @@ export const createShutdown = (
 }
 
 const main = async (): Promise<void> => {
-  // Optional: a no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set.
   await startTelemetry({ serviceName: 'clairvoyant-api' })
 
   const runtime = createRuntime()

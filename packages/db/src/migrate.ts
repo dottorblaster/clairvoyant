@@ -9,11 +9,6 @@ export interface MigrateIo {
   error(message: string): void
 }
 
-/**
- * The `pnpm db:migrate[:down]` entry point, factored out of the top-level script
- * so the argument handling and the missing-`DATABASE_URL` path can be tested.
- * Returns the process exit code.
- */
 export const runMigrateCli = async (
   argv: readonly string[],
   env: NodeJS.ProcessEnv = process.env,

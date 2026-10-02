@@ -13,7 +13,6 @@ export const LoginPage = () => {
     event.preventDefault()
     const trimmed = normalizeHandle(handle)
     if (!trimmed) return
-    // Full-page redirect into the API's OAuth flow; the browser never sees tokens.
     navigateTo(buildLoginUrl(trimmed))
   }
 

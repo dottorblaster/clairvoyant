@@ -20,8 +20,6 @@ describe('rsvpStatusName', () => {
   })
 
   test('reads the bare form other clients write', () => {
-    // 32 of the live index's 5898 RSVPs are stored this way. Missing these was
-    // the whole reason this module exists.
     assert.equal(rsvpStatusName('going'), 'going')
     assert.equal(rsvpStatusName('interested'), 'interested')
     assert.equal(rsvpStatusName('notgoing'), 'notgoing')

@@ -7,10 +7,6 @@ import { EventsPage } from './pages/EventsPage'
 import { HomePage } from './pages/HomePage'
 import { LoginPage } from './pages/LoginPage'
 
-// The style guide is a development tool. `import.meta.env.DEV` is replaced with
-// a literal at build time, so in production this evaluates to `null` and the
-// `lazy(() => import(...))` call becomes unreachable — which is what keeps the
-// style guide out of the shipped bundle rather than merely hiding the route.
 const StyleGuidePage = import.meta.env.DEV ? lazy(() => import('./pages/StyleGuidePage')) : null
 
 export const App = () => (

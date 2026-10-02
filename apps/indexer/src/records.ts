@@ -33,8 +33,6 @@ export const parseEventRecord = (record: unknown): ParsedEvent | null => {
   const endsAt = value.endsAt == null ? null : toDate(value.endsAt)
   if (value.endsAt != null && endsAt === null) return null
 
-  // `description` and `locations` are projected to their own columns; both are
-  // optional, so a missing value is normal rather than a parse failure.
   const details = parseEventDetails(record)
 
   return {

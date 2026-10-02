@@ -1,22 +1,15 @@
 import type { MiddlewareHandler } from 'hono'
 import type { HonoEnv } from './context.js'
 
-/** The mutating endpoints that are rate limited, each with its own bucket. */
 export const RATE_LIMIT_BUCKETS = ['createEvent', 'createInvite', 'rsvp'] as const
 
 export type RateLimitBucket = (typeof RATE_LIMIT_BUCKETS)[number]
 
 export interface RateLimitConfig {
-  /** Requests allowed per key per window. */
   limit: number
   windowMs: number
 }
 
-/**
- * Per-account fixed windows. The limits are generous enough that normal use
- * never notices, but a single account cannot hammer the endpoints that make the
- * API write to a PDS on its behalf.
- */
 export const RATE_LIMITS: Record<RateLimitBucket, RateLimitConfig> = {
   createEvent: { limit: 10, windowMs: 10 * 60_000 },
   createInvite: { limit: 30, windowMs: 10 * 60_000 },
@@ -25,31 +18,19 @@ export const RATE_LIMITS: Record<RateLimitBucket, RateLimitConfig> = {
 
 export interface RateLimitResult {
   allowed: boolean
-  /** Requests left in the current window. */
   remaining: number
-  /** Whole seconds until the current window resets; always `>= 0`. */
   resetAfter: number
 }
 
-/**
- * A counter keyed by account. Deliberately small: one instance per bucket, with
- * the clock injected so the window behaviour is testable without sleeping.
- */
 export interface RateLimiter extends RateLimitConfig {
   check(key: string): RateLimitResult
 }
 
 export interface FixedWindowOptions extends RateLimitConfig {
-  /** Milliseconds clock; defaults to `Date.now`. */
   now?: () => number
-  /** Soft cap on tracked keys before expired windows are swept. */
   maxKeys?: number
 }
 
-/**
- * A fixed-window counter. The window starts on the key's first request and is
- * not extended by later requests, so a burst cannot push the reset out forever.
- */
 export const createFixedWindowLimiter = (options: FixedWindowOptions): RateLimiter => {
   const limit = Math.max(1, Math.floor(options.limit))
   const windowMs = Math.max(1, Math.floor(options.windowMs))
@@ -57,8 +38,6 @@ export const createFixedWindowLimiter = (options: FixedWindowOptions): RateLimit
   const maxKeys = options.maxKeys ?? 10_000
   const windows = new Map<string, { start: number; count: number }>()
 
-  // An expired window is normally overwritten by the key's next request; this
-  // sweep only bounds memory for keys that never come back.
   const sweep = (at: number): void => {
     for (const [key, window] of windows) {
       if (at - window.start >= windowMs) windows.delete(key)
@@ -89,10 +68,6 @@ export const createFixedWindowLimiter = (options: FixedWindowOptions): RateLimit
 
 export type RateLimiters = Record<RateLimitBucket, RateLimiter>
 
-/**
- * Build one limiter per bucket, all sharing a clock. `overrides` exists so tests
- * can shrink a window instead of making `RATE_LIMITS[bucket].limit + 1` requests.
- */
 export const createRateLimiters = (
   now: () => number = Date.now,
   overrides: Partial<Record<RateLimitBucket, Partial<RateLimitConfig>>> = {},
@@ -107,12 +82,6 @@ export const createRateLimiters = (
   }
 }
 
-/**
- * Middleware charging one bucket to the signed-in account. A request with no
- * session is left untouched: there is no account to charge yet, and the route
- * answers with its own 401. The limiter comes from the injected deps, so a test
- * can drive its clock.
- */
 export const rateLimit =
   (bucket: RateLimitBucket): MiddlewareHandler<HonoEnv> =>
   async (c, next) => {

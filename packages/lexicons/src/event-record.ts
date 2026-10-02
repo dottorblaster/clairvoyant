@@ -1,20 +1,5 @@
-/**
- * Read the human-facing fields out of a raw `community.lexicon.calendar.event`
- * record.
- *
- * The indexer projects `name`, `starts_at` and `ends_at` to columns; this module
- * does the same for `description` and `locations` so the rest of the app never
- * has to reach into `raw`. `parseEventDetails` is used at index time to split
- * the record, and `formatEventLocations` turns the stored `locations` union back
- * into display lines for the browser.
- *
- * It is deliberately a permissive *reader*, not a validator: the indexer already
- * validated the record against the lexicon before writing it, so here we only
- * need to cope defensively with a partial or malformed value and degrade to
- * "nothing to show" instead of throwing. Escaping is the renderer's job; the
- * strings and structured values are returned verbatim.
- */
-
+// Permissive reader, not a validator. The indexer already validated the record,
+// so a partial or malformed value degrades to "nothing to show" instead of throwing.
 const EVENT_URI_TYPE = 'community.lexicon.calendar.event#uri'
 const ADDRESS_TYPE = 'community.lexicon.location.address'
 const FSQ_TYPE = 'community.lexicon.location.fsq'
@@ -26,7 +11,6 @@ const asRecord = (value: unknown): Record<string, unknown> | null =>
     ? (value as Record<string, unknown>)
     : null
 
-/** A trimmed, non-empty string, or `null`. */
 const text = (value: unknown): string | null => {
   if (typeof value !== 'string') return null
   const trimmed = value.trim()
@@ -34,18 +18,12 @@ const text = (value: unknown): string | null => {
 }
 
 export interface EventDetails {
-  /** The record's `description`, trimmed, or `null` when absent/blank. */
   description: string | null
-  /**
-   * The record's `locations` union members, in order. Objects only; anything
-   * else in the array is dropped. This is what gets stored in the JSONB column.
-   */
   locations: unknown[]
 }
 
 const EMPTY_DETAILS: EventDetails = { description: null, locations: [] }
 
-/** Split a raw event record into the fields the index promotes to columns. */
 export const parseEventDetails = (raw: unknown): EventDetails => {
   const record = asRecord(raw)
   if (record === null) return EMPTY_DETAILS
@@ -57,14 +35,6 @@ export const parseEventDetails = (raw: unknown): EventDetails => {
   return { description: text(record.description), locations }
 }
 
-/**
- * One display line for a `locations` union member.
- *
- * `$type` is the primary discriminator, but it is optional on every member of
- * the union, so when it is absent we fall back to the shape of the object. Order
- * matters: `country` identifies an address, `value` an H3 cell, `uri` an event
- * URI, and a latitude/longitude pair a coordinate.
- */
 const formatLocation = (value: unknown): string | null => {
   const record = asRecord(value)
   if (record === null) return null
@@ -109,7 +79,6 @@ const formatLocation = (value: unknown): string | null => {
   return name
 }
 
-/** Turn a stored `locations` value into display lines, de-duplicated. */
 export const formatEventLocations = (locations: unknown): string[] => {
   if (!Array.isArray(locations)) return []
 

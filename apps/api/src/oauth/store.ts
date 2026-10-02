@@ -12,13 +12,6 @@ export interface OAuthStores {
   sessionStore: NodeSavedSessionStore
 }
 
-/**
- * Back the OAuth state/session stores with Postgres so sessions survive restarts
- * and are shared across API instances. Values are stored as JSONB.
- *
- * `NodeSavedState`/`NodeSavedSession` are the DPoP-JWK-serializable forms the
- * Node client expects (a `SimpleStore` with get/set/del).
- */
 export const createOAuthStores = (db: Kysely<DB>): OAuthStores => ({
   stateStore: {
     async get(key: string): Promise<NodeSavedState | undefined> {

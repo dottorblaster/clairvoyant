@@ -13,7 +13,6 @@ const secureCookies = (env: Env): boolean => env.COOKIE_SECURE ?? env.NODE_ENV =
 const SESSION_COOKIE_MAX_AGE_SECONDS = 60 * 60 * 24 * 30
 const RETURN_TO_COOKIE = 'oauth_return_to'
 
-/** Only allow same-origin relative paths, so this can't be an open redirect. */
 const safeReturnTo = (value: string | undefined): string | null => {
   if (!value?.startsWith('/') || value.startsWith('//')) return null
   return value
@@ -26,9 +25,6 @@ oauthRoutes.get('/client-metadata.json', (c) => {
 })
 
 oauthRoutes.get('/jwks.json', (c) => {
-  // This is a public client (`token_endpoint_auth_method: 'none'`) that
-  // authenticates with DPoP, so it holds no server-side signing keys. A
-  // confidential client would instead publish its keyset here.
   return c.json({ keys: [] })
 })
 
@@ -56,7 +52,6 @@ oauthRoutes.get('/login', async (c) => {
 
 oauthRoutes.get('/callback', (c) => {
   const deps = c.get('deps')
-  // `callback(params)` resolves to `{ session, state }`, we only keep the DID in the browser cookie
   const params = new URL(c.req.url).searchParams
 
   return deps.oauth

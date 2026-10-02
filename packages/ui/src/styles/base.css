@@ -1,8 +1,3 @@
-/* ==========================================================================
-   Clairvoyant UI — base layer
-   Reset, the CRT backdrop, and typography defaults.
-   ========================================================================== */
-
 *,
 *::before,
 *::after {
@@ -23,18 +18,13 @@ body {
   font-family: var(--font-text);
   font-size: var(--text-md);
   line-height: var(--leading-normal);
-  /* Monospace ligatures (fi, ->, ==) make code and tabular text lie about how
-     many characters they contain. Off everywhere. */
+
   font-variant-ligatures: none;
   font-feature-settings:
     "liga" 0,
     "calt" 0;
 }
 
-/* --- the CRT ---------------------------------------------------------------
-   A fixed scanline comb plus a vignette, painted over the whole viewport. It is
-   decoration: it never takes pointer events and it sits *below* the modal layer
-   so dialogs stay readable. Opt out with `data-scanlines="off"` on <html>. */
 body::after {
   content: "";
   position: fixed;
@@ -56,9 +46,6 @@ html[data-scanlines="off"] body::after {
   display: none;
 }
 
-/* --- typography ------------------------------------------------------------
-   No default margins: vertical rhythm is owned by layout utilities (.stack),
-   so a component can be dropped anywhere without inheriting stray gaps. */
 h1,
 h2,
 h3,
@@ -102,9 +89,6 @@ ol {
   padding-left: var(--space-5);
 }
 
-/* --- links -----------------------------------------------------------------
-   Links are always underlined (never colour-only) and invert on hover, which
-   is both the 8-bit convention and a strong hover affordance. */
 a {
   color: inherit;
   text-decoration: underline;
@@ -117,7 +101,6 @@ a:hover {
   color: var(--bg);
 }
 
-/* --- code ------------------------------------------------------------------ */
 code,
 kbd,
 samp {
@@ -131,9 +114,6 @@ code {
   border: 1px solid var(--border);
 }
 
-/* --- forms ------------------------------------------------------------------
-   `color-scheme` above already flips native chrome (date pickers, scrollbars,
-   caret) per theme; this only polishes the bits that ignore it. */
 button,
 input,
 select,
@@ -151,9 +131,6 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   opacity: 1;
 }
 
-/* --- focus ------------------------------------------------------------------
-   A 2px ring pulled 2px off the element, so it never collides with the 2px
-   border. Visible on both themes against every surface. */
 :focus-visible {
   outline: var(--border-w) solid var(--focus);
   outline-offset: 2px;
@@ -163,9 +140,3 @@ input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover {
   background-color: var(--fg);
   color: var(--bg);
 }
-
-/* --- reduced motion ---------------------------------------------------------
-   Motion is disabled where it is declared, not with a blanket `!important`
-   override: the system only animates the block cursor (utilities.css) and
-   button transitions (components.css), and both are switched off explicitly.
-   Anything added later must handle prefers-reduced-motion itself. */

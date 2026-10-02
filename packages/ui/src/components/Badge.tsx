@@ -10,7 +10,6 @@ export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   icon?: IconName
 }
 
-/** A small status chip. `ink` is the loudest, `muted` the quietest. */
 export const Badge = ({ tone = 'default', icon, className, children, ...rest }: BadgeProps) => (
   <span {...rest} className={cx('badge', `badge--${tone}`, className)}>
     {icon === undefined ? null : <PixelIcon name={icon} size={8} />}

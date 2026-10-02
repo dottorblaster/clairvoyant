@@ -4,7 +4,6 @@ import { PixelIcon } from './PixelIcon.js'
 
 export interface TextFieldProps extends Omit<ComponentProps<'input'>, 'id'> {
   label: ReactNode
-  /** Generated with `useId` when omitted, so label/input are always associated. */
   id?: string
   hint?: ReactNode
   error?: ReactNode

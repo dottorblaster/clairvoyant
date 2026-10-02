@@ -108,12 +108,11 @@ export const createProjector =
           await handleAccount(trx, event, deps)
           break
         case 'sync':
-          // A `sync` event means the account's repo was (re)synced; prior projected rows may be stale
+          // A sync means the repo was re-synced, so prior projected rows may be stale.
           await trx.deleteAllByDid(event.did)
           deps.log.info('cleared derived rows for synced account', { did: event.did })
           break
         case 'identity':
-          // Identity changes (handle, PDS endpoint) do not affect indexed rows
           deps.log.debug('identity event (ignored)', { did: event.did, seq: event.seq })
           break
       }

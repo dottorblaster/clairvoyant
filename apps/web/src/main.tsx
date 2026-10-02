@@ -8,9 +8,7 @@ import { queryClient } from './lib/queryClient'
 
 import '@clairvoyant/ui/styles.css'
 
-// Resolve and paint the theme before the first render, so there is no flash of
-// the wrong theme. CSS carries a `prefers-color-scheme` fallback for the instant
-// before this runs.
+// Paint the stored theme before the first render to avoid a flash of the wrong one.
 initTheme()
 
 const container = document.getElementById('root')

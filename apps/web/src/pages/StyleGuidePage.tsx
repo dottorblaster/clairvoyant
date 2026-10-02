@@ -17,15 +17,6 @@ import {
 import { type ReactNode, useState } from 'react'
 import './styleguide.css'
 
-/**
- * Development-only catalogue of the design system.
- *
- * This is deliberately a route in the app rather than a storybook: it renders
- * against the *real* stylesheet, the real theme switch and the real components,
- * with no extra tooling. `App.tsx` only registers it when `import.meta.env.DEV`
- * is true, so it is not part of a production build.
- */
-
 const Section = ({ title, children }: { title: string; children: ReactNode }) => (
   <Panel title={title} headingLevel={2}>
     {children}

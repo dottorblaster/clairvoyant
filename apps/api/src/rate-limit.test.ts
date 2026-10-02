@@ -2,7 +2,6 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import { createFixedWindowLimiter, createRateLimiters, RATE_LIMITS } from '../dist/rate-limit.js'
 
-/** A controllable clock so window behaviour is tested without sleeping. */
 const clock = (start = 1_000): { now: () => number; advance: (ms: number) => void } => {
   let current = start
   return { now: () => current, advance: (ms) => (current += ms) }
@@ -21,7 +20,6 @@ describe('createFixedWindowLimiter', () => {
     const limiter = createFixedWindowLimiter({ limit: 1, windowMs: 60_000 })
 
     assert.equal(limiter.check('did:a').allowed, true)
-    // Blocked repeatedly for the rest of the window rather than sliding.
     for (let i = 0; i < 3; i += 1) {
       const blocked = limiter.check('did:a')
       assert.equal(blocked.allowed, false)
@@ -76,9 +74,7 @@ describe('createFixedWindowLimiter', () => {
     limiter.check('did:b')
     time.advance(1_000) // both windows are now expired
 
-    // Room for a third key exists only because the sweep removed the stale two.
     assert.equal(limiter.check('did:c').allowed, true)
-    // `did:a` was swept, so it starts a fresh window rather than staying blocked.
     assert.equal(limiter.check('did:a').allowed, true)
   })
 
@@ -108,7 +104,6 @@ describe('createRateLimiters', () => {
     assert.equal(limits.createEvent.check('did:a').allowed, true)
     assert.equal(limits.createEvent.check('did:a').allowed, false)
 
-    // Same clock, separate bucket, so it is untouched by the exhausted one.
     assert.equal(limits.rsvp.check('did:a').allowed, true)
 
     time.advance(1_000)

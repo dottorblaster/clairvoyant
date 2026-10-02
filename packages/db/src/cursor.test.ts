@@ -2,12 +2,6 @@ import assert from 'node:assert/strict'
 import { describe, test } from 'node:test'
 import { CURSOR_ID, readCursor, writeCursor } from '../dist/cursor.js'
 
-/**
- * A tiny stand-in for the Kysely query builder. It records the values passed to
- * `values()` and returns a canned first row, which is all `readCursor` and
- * `writeCursor` touch. Real round-tripping (bigint <-> number) is covered by the
- * Postgres integration suite.
- */
 interface FakeChain {
   selectFrom: (table: string) => FakeChain
   select: (column: string) => FakeChain
@@ -105,7 +99,6 @@ describe('writeCursor', () => {
     const { db, calls } = fakeDb(undefined)
     await writeCursor(db, 1)
 
-    // The conflict target is the id column and the update sets the same fields.
     assert.equal(calls.doUpdateSet.length, 1)
     const update = calls.doUpdateSet[0] as { seq: string }
     assert.equal(update.seq, '1')

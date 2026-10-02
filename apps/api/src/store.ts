@@ -16,14 +16,6 @@ import {
 } from '@clairvoyant/db'
 import { type Kysely, sql } from 'kysely'
 
-/**
- * The read/write surface `apps/api` needs from storage.
- *
- * This is a port, not a re-export of `@clairvoyant/db`: route handlers depend on
- * the interface, so integration tests can inject an in-memory fake and exercise
- * every route (auth, validation, invite enforcement, status codes) without a
- * Postgres instance. `createDbStore` is the production adapter.
- */
 export interface Store {
   getEventByUri(uri: string): Promise<EventRow | undefined>
   listEventsByAuthor(did: string): Promise<EventRow[]>

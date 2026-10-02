@@ -15,7 +15,6 @@ import {
 
 export const apiRoutes = new Hono<HonoEnv>()
 
-/** Decode a route parameter that carries an AT-URI, or `null` when malformed. */
 const decodeUriParam = (encoded: string): string | null => {
   try {
     return decodeURIComponent(encoded)
@@ -45,10 +44,6 @@ apiRoutes.get('/me/events', async (c) => {
   const did = c.get('did')
   if (!did) return c.json({ error: 'unauthenticated' }, 401)
 
-  // Everything the viewer is connected to: events they authored, plus events
-  // they RSVP'd "going" or "interested" to (including RSVPs they made from other
-  // clients, because the index is network-wide). Two independent reads, merged
-  // by a pure function so the dedupe and role rules are unit tested.
   const [authored, participating] = await Promise.all([
     deps.store.listEventsByAuthor(did),
     deps.store.listEventsForParticipant(did),
@@ -57,13 +52,8 @@ apiRoutes.get('/me/events', async (c) => {
   return c.json({ events: sortMyEvents(mergeMyEvents(authored, participating), new Date()) })
 })
 
-// GET /api/events — the public discover feed.
-//
-// Deliberately unauthenticated: this is how a visitor with no account finds
-// something to open. Every row is a projection of a public AT Protocol record,
-// and the event detail route is public for the same reason, so this exposes
-// nothing that is not already readable from the network. Note that the index
-// covers the whole collection network-wide, not just this app's users.
+// Public on purpose: the discover feed is how a visitor with no account finds an
+// event to open. Every row is already readable from the network.
 apiRoutes.get('/events', async (c) => {
   const deps = c.get('deps')
 
@@ -124,15 +114,13 @@ apiRoutes.post('/events/:encodedUri/rsvp', rateLimit('rsvp'), async (c) => {
     )
   }
 
-  // Strict invite-only: the caller must hold an invite for this event addressed
-  // to their own DID. This is the real enforcement of "the invite works just for
-  // the person invited" — the UI is only cosmetic.
+  // Invite-only: the caller must hold an invite for this event addressed to
+  // their own DID. The UI is only cosmetic; this is the enforcement.
   const invite = await deps.store.getInviteByTokenHash(hashInviteToken(parsed.data.inviteToken))
   if (!invite || invite.event_uri !== uri || invite.invitee_did !== did) {
     return c.json({ error: 'invite_required' }, 403)
   }
 
-  // The RSVP's `subject` is a StrongRef, so we need the event record's CID.
   const event = await deps.store.getEventByUri(uri)
   if (!event) return c.json({ error: 'not_found' }, 404)
 
@@ -147,9 +135,6 @@ apiRoutes.post('/events/:encodedUri/rsvp', rateLimit('rsvp'), async (c) => {
   }
 })
 
-// POST /api/events/:uri/invites — any logged-in user can invite someone by
-// handle. The handle is resolved to a DID and the invite is bound to it, so the
-// resulting link can only be used by that person.
 apiRoutes.post('/events/:encodedUri/invites', rateLimit('createInvite'), async (c) => {
   const deps = c.get('deps')
   const did = c.get('did')
@@ -207,9 +192,6 @@ apiRoutes.post('/events/:encodedUri/invites', rateLimit('createInvite'), async (
   return c.json({ token, eventUri: uri, inviteeHandle: handle, inviteeDid, inviterHandle }, 201)
 })
 
-// GET /api/invites/:token — validate an invite for the current viewer. Used by
-// the event page to decide whether to show the RSVP controls. `matchesViewer`
-// is null when nobody is logged in.
 apiRoutes.get('/invites/:token', async (c) => {
   const deps = c.get('deps')
   const did = c.get('did')
@@ -245,8 +227,7 @@ apiRoutes.post('/events', rateLimit('createEvent'), async (c) => {
     return c.json({ error: 'invalid_request', issues: parsed.error.issues }, 400)
   }
 
-  // The requested fields mirror `community.lexicon.calendar.event`: `name` and
-  // `createdAt` are required; `startsAt`/`endsAt`/`description` are optional.
+  // Writes go to the user's PDS, never to our database.
   const record: Record<string, unknown> = {
     $type: EVENT_COLLECTION,
     name: parsed.data.name,
@@ -257,7 +238,6 @@ apiRoutes.post('/events', rateLimit('createEvent'), async (c) => {
   if (parsed.data.description !== undefined) record.description = parsed.data.description
 
   try {
-    // IMPORTANT: write to the user's PDS, never to our database
     const result = await deps.pds.withAgent(did, (agent) =>
       agent.createRecord({ collection: EVENT_COLLECTION, record }),
     )

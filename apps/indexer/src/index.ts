@@ -40,15 +40,6 @@ export interface IndexerRuntime {
   health?: IndexerHealthReporter
 }
 
-/**
- * Replay the archive for the indexed collections, then follow the live tail,
- * persisting the cursor through the projector after every event. On a stream
- * failure it classifies the error and backs off; on repeated failure the caller
- * can abort via `signal`.
- *
- * Every dependency is injected so the loop can be driven in tests with a fake
- * stream, a fake clock and a fake exit.
- */
 export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
   const { env, log, store, jetstream, fetchTip, sleep, exit, signal, health } = runtime
   const handleEvent = createProjector({ store, log })
@@ -84,8 +75,6 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
       })) {
         if (signal.aborted) break
 
-        // Low-cardinality attributes are reused for the metric; the span also
-        // carries the sequence, which is too high-cardinality for a metric
         const attributes: Attributes = { 'jetstream.kind': event.kind }
         if (event.kind === 'commit') {
           attributes['atproto.collection'] = event.commit.collection
@@ -110,8 +99,7 @@ export const runIndexer = async (runtime: IndexerRuntime): Promise<void> => {
 
       if (signal.aborted) break
       health?.markDisconnected()
-      // A live replay should not normally end; if it does, reconnect from the
-      // cursor so we do not re-index already-processed history
+      // Reconnect from the cursor so already-processed history is not re-indexed.
       log.warn('replay stream ended; reconnecting from cursor', { seq })
       await sleep(BASE_BACKOFF_MS)
     } catch (error) {
@@ -145,7 +133,6 @@ const main = async (): Promise<void> => {
   const env = loadEnv()
   const log = createLogger(env.LOG_LEVEL, { app: 'indexer' })
 
-  // Optional: a no-op unless OTEL_EXPORTER_OTLP_ENDPOINT is set
   await startTelemetry({ serviceName: 'clairvoyant-indexer' })
 
   const db = createDb({ connectionString: env.DATABASE_URL })

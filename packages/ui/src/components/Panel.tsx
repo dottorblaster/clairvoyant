@@ -11,20 +11,12 @@ export type PanelVariant = 'default' | 'flush'
 
 export interface PanelProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   title?: ReactNode
-  /** Heading level for `title`, so a page keeps exactly one `<h1>`. */
   headingLevel?: 1 | 2 | 3
-  /** Small print under the title bar — provenance, counts, quiet context. */
   meta?: ReactNode
-  /** Controls pinned to the right of the title bar. */
   actions?: ReactNode
-  /** `flush` removes body padding, for full-bleed content such as a list. */
   variant?: PanelVariant
 }
 
-/**
- * The workhorse surface: an NES-style dialog box with an inverted title bar.
- * The bar only renders when there is something to put in it.
- */
 export const Panel = ({
   title,
   headingLevel = 1,

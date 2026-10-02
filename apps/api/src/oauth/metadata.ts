@@ -14,11 +14,8 @@ export const getRedirectUri = (env: Env): string =>
     ? `http://127.0.0.1:${env.PORT}/oauth/callback`
     : `${requirePublicUrl(env)}/oauth/callback`
 
-/**
- * The atproto OAuth "loopback" client encodes its redirect URI and scope into a
- * synthetic `http://localhost` client_id, so no HTTPS metadata document is
- * needed during local development.
- */
+// The loopback client encodes its redirect URI and scope into a synthetic
+// http://localhost client_id, so no HTTPS metadata document is needed in dev.
 export const getClientId = (env: Env): string => {
   if (env.OAUTH_MODE === 'loopback') {
     const params = new URLSearchParams({

@@ -1,6 +1,5 @@
 import { z } from 'zod'
 
-/** How many events the discover feed returns when the caller does not ask. */
 export const DEFAULT_DISCOVER_LIMIT = 6
 
 export const CreateEventSchema = z.object({
@@ -22,11 +21,6 @@ export const CreateInviteSchema = z.object({
   handle: z.string().min(1).max(256),
 })
 
-/**
- * `?limit=`. Digits only, so the `Number()` conversion below cannot yield NaN;
- * keeping it a string schema also means a missing parameter stays `undefined`
- * rather than being coerced.
- */
 export const DiscoverQuerySchema = z.object({
   limit: z.string().regex(/^\d+$/).optional(),
 })

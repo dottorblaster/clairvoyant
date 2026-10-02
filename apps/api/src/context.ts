@@ -5,14 +5,12 @@ import type { PdsPort } from './pds.js'
 import type { RateLimiters } from './rate-limit.js'
 import type { Store } from './store.js'
 
-/** Small IOC container */
 export interface AppDeps {
   env: Env
   oauth: OAuthClient
   store: Store
   pds: PdsPort
   log: Logger
-  /** Per-account rate limiters for the PDS-writing endpoints. */
   limits: RateLimiters
 }
 

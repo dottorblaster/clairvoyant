@@ -12,18 +12,14 @@ import type { DB, InviteTable, RsvpTable } from './schema.js'
 export type Db = Kysely<DB>
 export type DbOrTrx = Kysely<DB> | Transaction<DB>
 
-/** A row of the `event` table, as the API hands it to the browser. */
 export interface EventRow {
   uri: string
   cid: string
   author_did: string
   name: string
-  /** Optional in the lexicon, so this is genuinely nullable. */
   starts_at: Date | null
   ends_at: Date | null
-  /** Optional in the lexicon, so this is genuinely nullable. */
   description: string | null
-  /** The record's `locations` union array, as stored (JSONB). */
   locations: unknown
   indexed_at: Date
   raw: unknown
@@ -49,7 +45,6 @@ export interface RsvpUpsert {
   status: string
 }
 
-/** Idempotent create/update of an event, keyed by AT-URI. */
 export const upsertEvent = async (db: DbOrTrx, input: EventUpsert): Promise<void> => {
   const now = new Date()
   await db
@@ -62,8 +57,7 @@ export const upsertEvent = async (db: DbOrTrx, input: EventUpsert): Promise<void
       starts_at: input.startsAt,
       ends_at: input.endsAt,
       description: input.description,
-      // A JS array is sent by `pg` as a Postgres array literal, which JSONB
-      // rejects, so serialise it ourselves and let Postgres parse the JSON text.
+      // pg sends a JS array as a Postgres array literal, which JSONB rejects.
       locations: JSON.stringify(input.locations),
       indexed_at: now,
       raw: input.raw,
@@ -88,7 +82,6 @@ export const deleteEventByUri = async (db: DbOrTrx, uri: string): Promise<void> 
   await db.deleteFrom('event').where('uri', '=', uri).execute()
 }
 
-// Idempotent create/update of an RSVP, keyed by AT-URI
 export const upsertRsvp = async (db: DbOrTrx, input: RsvpUpsert): Promise<void> => {
   const now = new Date()
   await db
@@ -117,11 +110,6 @@ export const deleteRsvpByUri = async (db: DbOrTrx, uri: string): Promise<void> =
   await db.deleteFrom('rsvp').where('uri', '=', uri).execute()
 }
 
-/**
- * Remove every derived row authored by a DID. Used for account deletions and
- * `sync` events. RSVPs the author made against other people's events are also
- * removed because they are authored by this DID.
- */
 export const deleteAllByDid = async (db: DbOrTrx, did: string): Promise<void> => {
   await db.deleteFrom('rsvp').where('author_did', '=', did).execute()
   await db.deleteFrom('event').where('author_did', '=', did).execute()
@@ -138,30 +126,19 @@ export const listEventsByAuthor = async (db: DbOrTrx, did: string) =>
     .orderBy('starts_at', 'asc')
     .execute()
 
-/** Upper bound on `listDiscoverEvents`, shared with the API's query validation. */
 export const MAX_DISCOVER_LIMIT = 24
 
 export interface DiscoverEventsOptions {
   limit: number
-  /**
-   * How many of the soonest upcoming events are candidates for the random pick.
-   * Bounds the work so a random sample never has to consider the whole index.
-   */
   candidatePool?: number
 }
 
-/**
- * Partial Fisher-Yates: shuffles in place and returns the first `count` items.
- * Exported because it is the only non-trivial logic in the discover query and it
- * can be tested without a database.
- */
 export const sampleWithoutReplacement = <T>(items: readonly T[], count: number): T[] => {
   const shuffled = items.slice()
   const wanted = Math.max(0, Math.min(count, shuffled.length))
 
   for (let i = 0; i < wanted; i += 1) {
     const j = i + Math.floor(Math.random() * (shuffled.length - i))
-    // Both indices are in range by construction.
     const atI = shuffled[i]!
     shuffled[i] = shuffled[j]!
     shuffled[j] = atI
@@ -170,20 +147,6 @@ export const sampleWithoutReplacement = <T>(items: readonly T[], count: number):
   return shuffled.slice(0, wanted)
 }
 
-/**
- * The public "discover" feed: a handful of events for a visitor to open.
- *
- * Two tiers, deliberately:
- *
- *   1. Upcoming events, randomly sampled, so repeat visits surface different
- *      ones. The sample is drawn from a bounded soonest-first window rather than
- *      the whole table, so the cost does not grow with the index.
- *   2. Most recent past events, to top up. Without this a young or quiet index
- *      would leave the homepage empty.
- *
- * Events with no `startsAt` are excluded: the lexicon makes `startsAt` optional,
- * but an undated event is not something to put on a calendar discovery list.
- */
 export const listDiscoverEvents = async (
   db: DbOrTrx,
   { limit, candidatePool = 200 }: DiscoverEventsOptions,
@@ -219,29 +182,16 @@ export const listDiscoverEvents = async (
   return [...picked, ...recent]
 }
 
-/** An event the viewer RSVP'd to, carrying the raw status of that RSVP. */
 export interface ParticipatingEventRow extends EventRow {
-  /** Verbatim network value, e.g. `community.lexicon.calendar.rsvp#going`. */
   rsvp_status: string
   rsvp_indexed_at: Date
 }
 
-/** How the viewer is connected to an event in their own list. */
 export type MyEventRole = 'hosting' | AttendingStatusName
 
 export type MyEvent = EventRow & { role: MyEventRole }
 
-/**
- * Events the viewer RSVP'd "going" or "interested" to.
- *
- * `INNER JOIN` on purpose: 1005 of the live index's 5898 RSVPs point at events
- * that are not in `event` (the record was deleted, or predates the indexer's
- * start sequence), and there is nothing to render for those.
- *
- * The status filter uses both network spellings, derived from one constant — see
- * `rsvp-status.ts` for why that matters. It reads `rsvp_author_did_idx` and then
- * the `event` primary key, so it does not need an index of its own.
- */
+// INNER JOIN on purpose: an RSVP whose event is not indexed has nothing to render.
 export const listEventsForParticipant = async (
   db: DbOrTrx,
   did: string,
@@ -268,7 +218,6 @@ const toEventRow = (row: ParticipatingEventRow): EventRow => ({
   raw: row.raw,
 })
 
-/** Stronger commitment first, then the most recently indexed record. */
 const isStrongerRsvp = (
   candidate: ParticipatingEventRow,
   incumbent: ParticipatingEventRow,
@@ -283,18 +232,7 @@ const isStrongerRsvp = (
   return candidate.rsvp_indexed_at.getTime() > incumbent.rsvp_indexed_at.getTime()
 }
 
-/**
- * Merges the viewer's authored events with the ones they RSVP'd to.
- *
- * Rules, in order:
- *   1. An authored event is always `hosting`, even if the viewer also RSVP'd to
- *      it. Hosting beats attending.
- *   2. One row per event URI. Duplicates are real: 80 `(author, event)` pairs in
- *      the live index hold more than one RSVP record, and some disagree
- *      (`going` + `interested` for the same event), so the strongest status wins
- *      and ties break on the most recently indexed record.
- *   3. An RSVP whose status is unrecognised is dropped rather than guessed at.
- */
+// Hosting beats attending, and duplicate RSVPs collapse to the strongest status.
 export const mergeMyEvents = (
   authored: readonly EventRow[],
   participating: readonly ParticipatingEventRow[],
@@ -317,7 +255,6 @@ export const mergeMyEvents = (
   }
 
   for (const [uri, entry] of strongest) {
-    // Hosting already claimed this URI, and hosting beats attending.
     if (merged.has(uri)) continue
     merged.set(uri, { ...toEventRow(entry.row), role: entry.role })
   }
@@ -325,11 +262,6 @@ export const mergeMyEvents = (
   return [...merged.values()]
 }
 
-/**
- * Display order: upcoming soonest-first, then past most-recent-first, then the
- * undated ones. The browser splits the same list back into those three sections,
- * so the order here is what the reader sees.
- */
 export const sortMyEvents = (events: readonly MyEvent[], now: Date): MyEvent[] => {
   const cutoff = now.getTime()
   const upcoming = events.filter(
@@ -342,7 +274,6 @@ export const sortMyEvents = (events: readonly MyEvent[], now: Date): MyEvent[] =
 
   const byStartAsc = (a: MyEvent, b: MyEvent): number =>
     (a.starts_at?.getTime() ?? 0) - (b.starts_at?.getTime() ?? 0)
-  // A stable tie-break, so the order never depends on the database's whim.
   const byName = (a: MyEvent, b: MyEvent): number => a.name.localeCompare(b.name)
 
   return [
@@ -352,10 +283,8 @@ export const sortMyEvents = (events: readonly MyEvent[], now: Date): MyEvent[] =
   ]
 }
 
-/** A row of the `rsvp` table plus the normalised status the UI renders. */
 export type RsvpRow = Selectable<RsvpTable> & { status_name: RsvpStatusName | null }
 
-/** The primary read: "who is going to event X" (uses `rsvp_subject_uri_idx`). */
 export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string): Promise<RsvpRow[]> => {
   const rows = await db
     .selectFrom('rsvp')
@@ -364,14 +293,10 @@ export const listRsvpsForEvent = async (db: DbOrTrx, subjectUri: string): Promis
     .orderBy('indexed_at', 'asc')
     .execute()
 
-  // `status` stays verbatim for fidelity; `status_name` is what the UI renders,
-  // because the raw value is either `going` or `…#going` depending on which
-  // client wrote the record.
   return rows.map((row) => ({ ...row, status_name: rsvpStatusName(row.status) }))
 }
 
 export interface InviteInput {
-  /** SHA-256 hash of the invite token; the raw token is never persisted. */
   tokenHash: string
   eventUri: string
   inviteeDid: string
@@ -380,7 +305,6 @@ export interface InviteInput {
   inviterHandle: string
 }
 
-/** App state (not network-derived): create a per-person invite. */
 export const createInvite = async (db: DbOrTrx, input: InviteInput): Promise<void> => {
   await db
     .insertInto('invite')
@@ -401,5 +325,4 @@ export const getInviteByTokenHash = async (
 ): Promise<InviteRow | undefined> =>
   db.selectFrom('invite').selectAll().where('token_hash', '=', tokenHash).executeTakeFirst()
 
-/** A row of the `invite` table as selected (not the insert shape). */
 export type InviteRow = Selectable<InviteTable>

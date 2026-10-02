@@ -30,7 +30,6 @@ export const CreateEventPage = () => {
     mutationFn: createEvent,
     onSuccess: async (result) => {
       await queryClient.invalidateQueries({ queryKey: ['my-events'] })
-      // at://<did>/<collection>/<rkey> -> readable /p/<did>/e/<rkey>
       const parsed = parseEventUri(result.uri)
       navigate(parsed ? buildEventPath(parsed.did, parsed.rkey) : '/events')
     },
@@ -43,8 +42,6 @@ export const CreateEventPage = () => {
     event.preventDefault()
     if (!form.name.trim() || !form.startsAt) return
 
-    // datetime-local values are local time; convert to the ISO strings the
-    // lexicon expects.
     const startsAt = new Date(form.startsAt).toISOString()
     const input: Parameters<typeof createEvent>[0] = {
       name: form.name.trim(),

@@ -72,8 +72,6 @@ const jsonPost = (body: unknown, headers: Record<string, string> = {}) => ({
   body: JSON.stringify(body),
 })
 
-/* ------------------------------------------------------------------ /api/me */
-
 describe('GET /api/me', () => {
   test('is unauthenticated without a session cookie', async () => {
     const { app } = createTestApp()
@@ -106,8 +104,6 @@ describe('GET /api/me', () => {
   })
 })
 
-/* ----------------------------------------------------------- /api/me/events */
-
 describe('GET /api/me/events', () => {
   test('is unauthenticated without a session cookie', async () => {
     const { app } = createTestApp()
@@ -130,8 +126,6 @@ describe('GET /api/me/events', () => {
     assert.equal(roles.get('at://a/theirs'), 'going')
   })
 })
-
-/* -------------------------------------------------------------- /api/events */
 
 describe('GET /api/events', () => {
   test('uses the default discover limit', async () => {
@@ -168,8 +162,6 @@ describe('GET /api/events', () => {
   })
 })
 
-/* ------------------------------------------------- /api/events/:uri/rsvps */
-
 describe('GET /api/events/:uri/rsvps', () => {
   test('returns the event and its RSVPs', async () => {
     const store = createFakeStore({
@@ -202,8 +194,6 @@ describe('GET /api/events/:uri/rsvps', () => {
     assert.deepEqual(await response.json(), { error: 'invalid_uri' })
   })
 })
-
-/* --------------------------------------------------- POST /api/events/:uri/rsvp */
 
 describe('POST /api/events/:uri/rsvp', () => {
   const url = `/api/events/${encodeURIComponent(EVENT_URI)}/rsvp`
@@ -326,8 +316,6 @@ describe('POST /api/events/:uri/rsvp', () => {
   })
 })
 
-/* --------------------------------------------- POST /api/events/:uri/invites */
-
 describe('POST /api/events/:uri/invites', () => {
   const url = `/api/events/${encodeURIComponent(EVENT_URI)}/invites`
 
@@ -429,8 +417,6 @@ describe('POST /api/events/:uri/invites', () => {
   })
 })
 
-/* ------------------------------------------------------- /api/invites/:token */
-
 describe('GET /api/invites/:token', () => {
   test('reports an unknown token as not found', async () => {
     const { app } = createTestApp()
@@ -463,8 +449,6 @@ describe('GET /api/invites/:token', () => {
     assert.equal(((await rejected.json()) as { matchesViewer: boolean }).matchesViewer, false)
   })
 })
-
-/* ---------------------------------------------------------- POST /api/events */
 
 describe('POST /api/events', () => {
   const validBody = { name: 'Launch party', startsAt: '2026-07-01T18:00:00.000Z' }
@@ -568,8 +552,6 @@ describe('POST /api/events', () => {
   })
 })
 
-/* --------------------------------------------------------- abuse controls */
-
 describe('mutation rate limiting', () => {
   const validBody = { name: 'Launch party', startsAt: '2026-07-01T18:00:00.000Z' }
 
@@ -631,7 +613,6 @@ describe('mutation rate limiting', () => {
     const blocked = await app.request(url, jsonPost({ handle: 'b.test' }, cookieFor(env)))
     assert.equal(blocked.status, 429)
 
-    // The invite window is exhausted, but event creation has its own room.
     const created = await app.request('/api/events', jsonPost(validBody, cookieFor(env)))
     assert.equal(created.status, 201)
   })

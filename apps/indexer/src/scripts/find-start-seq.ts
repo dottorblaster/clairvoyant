@@ -2,20 +2,6 @@ import type { TypedEvent } from '@bsky/jetstream'
 import { loadEnv } from '../env.js'
 import { createJetstreamClient, fetchSealedTipSeq, type JetstreamClient } from '../jetstream.js'
 
-/**
- * Find the Jetstream sequence number for a point in time.
- *
- * Jetstream v2 has no time->seq API, but the archive is ordered by seq and each
- * event carries a `time`. We sample small `snapshot()` windows (afterSeq/beforeSeq)
- * and binary-search the sequence space until we land on the window whose first
- * event is at/after the target time.
- *
- * Usage:
- *   pnpm --filter @clairvoyant/indexer find-start-seq            # one year ago
- *   pnpm --filter @clairvoyant/indexer find-start-seq --age 6mo
- *   pnpm --filter @clairvoyant/indexer find-start-seq --since 2025-01-01T00:00:00Z
- */
-
 const DAY_MS = 86_400_000
 export const DEFAULT_AGE_MS = 365 * DAY_MS
 export const WINDOW_SEQ = 2_000_000
@@ -48,10 +34,6 @@ export const parseAgeMs = (raw: string): number => {
   return amount * (multipliers[unit] ?? DAY_MS)
 }
 
-/**
- * Resolve the target instant from CLI arguments. `now` is injectable so the
- * `--age`/default branches are deterministic in tests.
- */
 export const parseTargetMs = (argv: readonly string[], now: number = Date.now()): number => {
   const sinceIdx = argv.indexOf('--since')
   const ageIdx = argv.indexOf('--age')

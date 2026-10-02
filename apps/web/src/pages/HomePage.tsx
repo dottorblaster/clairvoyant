@@ -8,11 +8,6 @@ import { useMe } from '../lib/useMe'
 
 const DISCOVER_LIMIT = 6
 
-/**
- * The homepage. Public and deliberately useful with no session: a visitor who
- * has never heard of this app should be able to open an event immediately
- * instead of being told to log in first.
- */
 export const HomePage = () => {
   const me = useMe()
   const discover = useQuery({
