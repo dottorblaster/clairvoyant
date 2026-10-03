@@ -106,7 +106,7 @@ export interface Api {
   logout(): Promise<{ ok: boolean }>
 }
 
-export const createApi = ({ fetch, baseUrl }: ApiConfig): Api => {
+export const createApiClient = ({ fetch, baseUrl }: ApiConfig): Api => {
   const request = async <T>(
     path: string,
     init?: { method?: string; body?: string },
@@ -162,7 +162,7 @@ export const createApi = ({ fetch, baseUrl }: ApiConfig): Api => {
   }
 }
 
-const defaultApi = createApi({
+const defaultApi = createApiClient({
   fetch: (url, init) => globalThis.fetch(url, init),
   baseUrl: DEFAULT_BASE_URL,
 })

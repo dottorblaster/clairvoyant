@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'vitest'
-import { ApiError, createApi, type FetchInitLike, type FetchResponseLike } from './api'
+import { ApiError, createApiClient, type FetchInitLike, type FetchResponseLike } from './api'
 
 interface Call {
   url: string
@@ -17,7 +17,7 @@ const response = (
 
 const setup = (impl: (call: Call) => FetchResponseLike = () => response({}), baseUrl = '') => {
   const calls: Call[] = []
-  const api = createApi({
+  const api = createApiClient({
     baseUrl,
     fetch: async (url, init) => {
       const call = { url, init }
