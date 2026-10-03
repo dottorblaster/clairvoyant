@@ -65,14 +65,14 @@ describe('EventDetailPage', () => {
     installFetchStub([unauthenticated])
     renderWithProviders(<EventDetailPage />, { route: '/p/did:plc:author', path: '/p/:did' })
 
-    expect(await screen.findByText(/malformed/i)).toBeTruthy()
+    expect(await screen.findByText(/that link is broken/i)).toBeTruthy()
   })
 
   test('reports an event that is not in the index', async () => {
     installFetchStub([unauthenticated, { path: /\/api\/events\/.*\/rsvps/, status: 404, body: {} }])
     renderWithProviders(<EventDetailPage />, { route: ROUTE, path: PATH })
 
-    expect(await screen.findByText(/could not be found/i)).toBeTruthy()
+    expect(await screen.findByText(/no event here/i)).toBeTruthy()
   })
 
   test('renders the event, its RSVPs and the invite-only notice', async () => {
@@ -80,10 +80,10 @@ describe('EventDetailPage', () => {
     renderWithProviders(<EventDetailPage />, { route: ROUTE, path: PATH })
 
     expect(await screen.findByRole('heading', { name: 'Launch party' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'RSVPs (2)' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: "Who's in (2)" })).toBeTruthy()
     expect(screen.getByText('going')).toBeTruthy()
     expect(screen.getByText('community.lexicon.calendar.rsvp#maybe')).toBeTruthy()
-    expect(screen.getByText(/rsvp is invite-only/i)).toBeTruthy()
+    expect(screen.getByText(/rsvps are invite-only/i)).toBeTruthy()
   })
 
   test('renders the description and locations, and offers sharing without a session', async () => {
@@ -130,7 +130,7 @@ describe('EventDetailPage', () => {
     installFetchStub([unauthenticated, rsvpsOk, invite('bad', { valid: false })])
     renderWithProviders(<EventDetailPage />, { route: `${ROUTE}?invite=bad`, path: PATH })
 
-    expect(await screen.findByText(/invite link is not valid/i)).toBeTruthy()
+    expect(await screen.findByText(/invite didn't work/i)).toBeTruthy()
   })
 
   test('tells the viewer when the invite is for someone else', async () => {
@@ -155,7 +155,7 @@ describe('EventDetailPage', () => {
 
     renderWithProviders(<EventDetailPage />, { route: `${ROUTE}?invite=tok`, path: PATH })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Log in to respond' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Link up to reply' }))
     await waitFor(() =>
       expect(assign).toHaveBeenCalledWith(
         expect.stringContaining('/oauth/login?handle=invitee.test&return_to='),
@@ -178,10 +178,10 @@ describe('EventDetailPage', () => {
 
     renderWithProviders(<EventDetailPage />, { route: `${ROUTE}?invite=tok`, path: PATH })
 
-    fireEvent.click(await screen.findByRole('button', { name: 'Accept' }))
+    fireEvent.click(await screen.findByRole('button', { name: "I'm in" }))
 
-    expect(await screen.findByText(/recorded as/i)).toBeTruthy()
-    expect(screen.getByText('accepted')).toBeTruthy()
+    expect(await screen.findByText(/your rsvp is in/i)).toBeTruthy()
+    expect(screen.getByText('Going')).toBeTruthy()
     const post = calls.find((call) => call.init.method === 'POST')
     expect(JSON.parse(post?.init.body ?? '{}')).toEqual({ status: 'going', inviteToken: 'tok' })
   })

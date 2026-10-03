@@ -20,7 +20,7 @@ describe('CreateEventPage', () => {
 
     renderRoutes(routes, { route: '/create' })
 
-    expect(await screen.findByText(/need to log in before creating/i)).toBeTruthy()
+    expect(await screen.findByText(/need to link up before you can post/i)).toBeTruthy()
   })
 
   test('posts the ISO fields and navigates to my events', async () => {
@@ -38,7 +38,7 @@ describe('CreateEventPage', () => {
 
     fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Launch party' } })
     fireEvent.change(screen.getByLabelText('Starts at'), { target: { value: '2030-07-01T18:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Create event' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Post event' }))
 
     expect(await screen.findByText('my events')).toBeTruthy()
 
@@ -56,8 +56,8 @@ describe('CreateEventPage', () => {
 
     fireEvent.change(await screen.findByLabelText('Name'), { target: { value: 'Party' } })
     fireEvent.change(screen.getByLabelText('Starts at'), { target: { value: '2030-07-01T18:00' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Create event' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Post event' }))
 
-    await waitFor(() => expect(screen.getByText(/could not create the event/i)).toBeTruthy())
+    await waitFor(() => expect(screen.getByText(/didn't take/i)).toBeTruthy())
   })
 })

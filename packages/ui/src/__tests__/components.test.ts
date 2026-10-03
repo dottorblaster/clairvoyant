@@ -275,7 +275,7 @@ describe('ThemeToggle', () => {
   test('renders during server rendering, where there is no DOM', () => {
     const markup = render(createElement(ThemeToggle, null))
     assert.match(markup, /theme-toggle/)
-    assert.match(markup, /Theme: Auto/)
+    assert.match(markup, /Screen: Auto/)
   })
 
   test('falls back to the dark icon when the OS preference is unknown', () => {

@@ -24,7 +24,7 @@ describe('LoginPage', () => {
     renderRoutes(loginRoutes, { route: '/login' })
 
     expect(await screen.findByLabelText('Handle')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Continue' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Link up' })).toBeTruthy()
   })
 
   test('redirects an already-logged-in visitor to their events', async () => {
@@ -44,7 +44,7 @@ describe('LoginPage', () => {
 
     renderRoutes(loginRoutes, { route: '/login' })
     fireEvent.change(await screen.findByLabelText('Handle'), { target: { value: ' @alice.test ' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Link up' }))
 
     await waitFor(() => expect(assign).toHaveBeenCalledWith('/oauth/login?handle=alice.test'))
   })
@@ -55,7 +55,7 @@ describe('LoginPage', () => {
     assign.mockClear()
 
     renderRoutes(loginRoutes, { route: '/login' })
-    fireEvent.click(await screen.findByRole('button', { name: 'Continue' }))
+    fireEvent.click(await screen.findByRole('button', { name: 'Link up' }))
 
     expect(assign).not.toHaveBeenCalled()
   })

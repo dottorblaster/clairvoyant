@@ -44,13 +44,13 @@ describe('ThemeToggle cycling', () => {
     installMatchMedia(false)
     render(<ThemeToggle />)
 
-    expect(screen.getByRole('button').textContent).toContain('Theme: Auto')
+    expect(screen.getByRole('button').textContent).toContain('Screen: Auto')
     fireEvent.click(screen.getByRole('button'))
-    expect(screen.getByRole('button').textContent).toContain('Theme: Light')
+    expect(screen.getByRole('button').textContent).toContain('Screen: Light')
     fireEvent.click(screen.getByRole('button'))
-    expect(screen.getByRole('button').textContent).toContain('Theme: Dark')
+    expect(screen.getByRole('button').textContent).toContain('Screen: Dark')
     fireEvent.click(screen.getByRole('button'))
-    expect(screen.getByRole('button').textContent).toContain('Theme: Auto')
+    expect(screen.getByRole('button').textContent).toContain('Screen: Auto')
   })
 
   test('persists the chosen mode and paints the resolved theme', () => {

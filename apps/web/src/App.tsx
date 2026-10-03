@@ -1,5 +1,5 @@
 import { lazy } from 'react'
-import { Route, Routes } from 'react-router-dom'
+import { Link, Route, Routes } from 'react-router-dom'
 import { Layout } from './components/Layout'
 import { CreateEventPage } from './pages/CreateEventPage'
 import { EventDetailPage } from './pages/EventDetailPage'
@@ -18,7 +18,14 @@ export const App = () => (
       <Route path="p/:did/e/:rkey" element={<EventDetailPage />} />
       <Route path="create" element={<CreateEventPage />} />
       {StyleGuidePage === null ? null : <Route path="styleguide" element={<StyleGuidePage />} />}
-      <Route path="*" element={<p>Page not found.</p>} />
+      <Route
+        path="*"
+        element={
+          <p>
+            Nothing here. <Link to="/">Back to the rack</Link>.
+          </p>
+        }
+      />
     </Route>
   </Routes>
 )

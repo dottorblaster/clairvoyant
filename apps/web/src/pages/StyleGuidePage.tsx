@@ -93,7 +93,8 @@ const StyleGuidePage = () => {
       <header className="stack stack--tight">
         <h1>Clairvoyant UI</h1>
         <p className="muted">
-          Game Boy DMG chrome, NES geometry. Every component, token and state in the system.
+          Four shades of green, hard shadows, zero rounded corners. Every component, token and state
+          in the kit.
         </p>
         <div className="cluster">
           <ThemeToggle />
@@ -238,7 +239,7 @@ const StyleGuidePage = () => {
       </Section>
 
       <Section title="Loading">
-        <Loading>Loading events</Loading>
+        <Loading>Reading the shelf</Loading>
       </Section>
 
       <Section title="Panels">
@@ -282,7 +283,7 @@ const StyleGuidePage = () => {
             <TextField label="Their handle" placeholder="alice.bsky.social" />
             <div className="cluster">
               <Button variant="primary" onClick={() => setModalOpen(false)}>
-                Generate invite link
+                Make invite link
               </Button>
               <Button onClick={() => setModalOpen(false)}>Cancel</Button>
             </div>

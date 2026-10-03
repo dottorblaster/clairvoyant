@@ -43,9 +43,9 @@ describe('InviteModal', () => {
     fireEvent.change(screen.getByLabelText('Their handle'), {
       target: { value: ' @invitee.test ' },
     })
-    fireEvent.click(screen.getByRole('button', { name: 'Generate invite link' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Make invite link' }))
 
-    expect(await screen.findByText(/only they can use it/i)).toBeTruthy()
+    expect(await screen.findByText(/only they can open it/i)).toBeTruthy()
     const link = screen.getByLabelText('Invite link') as HTMLInputElement
     expect(link.value).toBe(`${window.location.origin}${EVENT_PATH}?invite=tok`)
     expect(JSON.parse(calls[0]?.init.body ?? '{}')).toEqual({ handle: 'invitee.test' })
@@ -70,10 +70,10 @@ describe('InviteModal', () => {
 
     render()
     fireEvent.change(screen.getByLabelText('Their handle'), { target: { value: 'invitee.test' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Generate invite link' }))
-    await screen.findByRole('button', { name: 'Copy invite link' })
+    fireEvent.click(screen.getByRole('button', { name: 'Make invite link' }))
+    await screen.findByRole('button', { name: 'Copy link' })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copy invite link' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Copy link' }))
 
     await waitFor(() => expect(writeText).toHaveBeenCalledOnce())
     expect(writeText.mock.calls[0]?.[0]).toContain(`${EVENT_PATH}?invite=tok`)
@@ -98,7 +98,7 @@ describe('InviteModal', () => {
 
     render()
     fireEvent.change(screen.getByLabelText('Their handle'), { target: { value: 'invitee.test' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Generate invite link' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Make invite link' }))
     await screen.findByRole('button', { name: 'Invite someone else' })
 
     fireEvent.click(screen.getByRole('button', { name: 'Invite someone else' }))
@@ -118,8 +118,8 @@ describe('InviteModal', () => {
 
     render()
     fireEvent.change(screen.getByLabelText('Their handle'), { target: { value: 'nobody.test' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Generate invite link' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Make invite link' }))
 
-    expect(await screen.findByText(/could not create the invite/i)).toBeTruthy()
+    expect(await screen.findByText(/that handle didn't go through/i)).toBeTruthy()
   })
 })

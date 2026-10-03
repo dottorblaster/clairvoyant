@@ -28,13 +28,13 @@ export const Layout = () => {
 
         <nav className="app-nav" aria-label="Main">
           <NavLink to="/" end className="nav-link">
-            Discover
+            Game rack
           </NavLink>
           <NavLink to="/events" className="nav-link">
-            My events
+            My shelf
           </NavLink>
           <NavLink to="/create" className="nav-link">
-            Create event
+            New event
           </NavLink>
         </nav>
 
@@ -50,12 +50,12 @@ export const Layout = () => {
                 pending={logoutMutation.isPending}
                 onClick={() => logoutMutation.mutate()}
               >
-                Log out
+                Eject
               </Button>
             </>
           ) : (
             <NavLink to="/login" className="nav-link">
-              Log in
+              Link up
             </NavLink>
           )}
         </div>

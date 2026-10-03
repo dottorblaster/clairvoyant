@@ -47,9 +47,9 @@ export const ThemeToggle = ({ className }: ThemeToggleProps) => {
       icon={resolved === 'dark' ? 'moon' : 'sun'}
       className={cx('theme-toggle', className)}
       onClick={() => setMode(nextThemeMode)}
-      title={`Theme: ${label}. Activate to change.`}
+      title={`Screen: ${label}. Activate to change.`}
     >
-      {`Theme: ${label}`}
+      {`Screen: ${label}`}
     </Button>
   )
 }

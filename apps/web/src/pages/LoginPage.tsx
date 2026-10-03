@@ -19,10 +19,7 @@ export const LoginPage = () => {
   if (me.data) return <Navigate to="/events" replace />
 
   return (
-    <Panel
-      title="Log in with AT Protocol"
-      meta="Your records stay in your own PDS. This app only ever reads its own index."
-    >
+    <Panel title="Link up" meta="Your records stay on your own PDS.">
       <form onSubmit={onSubmit} className="stack">
         <TextField
           label="Handle"
@@ -31,12 +28,11 @@ export const LoginPage = () => {
           onChange={(event) => setHandle(event.target.value)}
           placeholder="alice.bsky.social"
           autoComplete="username"
-          hint="For example, alice.bsky.social"
           required
         />
         <div className="cluster">
           <Button type="submit" variant="primary" pending={me.isLoading}>
-            Continue
+            Link up
           </Button>
         </div>
       </form>

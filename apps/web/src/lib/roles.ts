@@ -8,9 +8,9 @@ export const ROLE_TONE: Record<MyEventRole, BadgeTone> = {
 }
 
 export const RESPONSE_LABEL: Record<RsvpStatus, string> = {
-  going: 'accepted',
-  notgoing: 'declined',
-  interested: 'interested',
+  going: 'Going',
+  notgoing: 'Not going',
+  interested: 'Maybe',
 }
 
 export const rsvpTone = (name: RsvpStatus | null): BadgeTone => {

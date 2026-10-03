@@ -37,7 +37,7 @@ describe('HomePage', () => {
 
     const link = await screen.findByRole('link', { name: 'Launch party' })
     expect(link.getAttribute('href')).toBe('/p/did:plc:author/e/abc')
-    expect(screen.getByRole('link', { name: /log in with your handle/i })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Link up' })).toBeTruthy()
   })
 
   test('invites a logged-in visitor to their own events', async () => {
@@ -50,7 +50,7 @@ describe('HomePage', () => {
 
     renderWithProviders(<HomePage />)
 
-    expect(await screen.findByRole('link', { name: 'See your own events' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Open my shelf' })).toBeTruthy()
   })
 
   test('explains an empty index', async () => {
@@ -63,7 +63,7 @@ describe('HomePage', () => {
 
     renderWithProviders(<HomePage />)
 
-    expect(await screen.findByText(/nothing indexed yet/i)).toBeTruthy()
+    expect(await screen.findByText(/rack's empty/i)).toBeTruthy()
   })
 
   test('reports a failed discover request', async () => {
@@ -76,6 +76,6 @@ describe('HomePage', () => {
 
     renderWithProviders(<HomePage />)
 
-    await waitFor(() => expect(screen.getByText('Could not load events.')).toBeTruthy())
+    await waitFor(() => expect(screen.getByText("Can't reach the rack.")).toBeTruthy())
   })
 })

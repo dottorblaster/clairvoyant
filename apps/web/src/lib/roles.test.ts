@@ -10,9 +10,9 @@ describe('ROLE_TONE', () => {
 describe('RESPONSE_LABEL', () => {
   test('maps each status to the copy shown after responding', () => {
     expect(RESPONSE_LABEL).toEqual({
-      going: 'accepted',
-      notgoing: 'declined',
-      interested: 'interested',
+      going: 'Going',
+      notgoing: 'Not going',
+      interested: 'Maybe',
     })
   })
 })

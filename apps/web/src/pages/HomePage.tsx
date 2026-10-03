@@ -18,18 +18,11 @@ export const HomePage = () => {
   const events = discover.data?.events ?? []
 
   return (
-    <Panel
-      title="Discover"
-      meta="Upcoming events indexed from the network. Anyone can look — RSVPs are invite-only."
-    >
-      {discover.isLoading ? <Loading>Loading events</Loading> : null}
-      {discover.isError ? <Notice tone="error">Could not load events.</Notice> : null}
+    <Panel title="Game rack" meta="A few things coming up.">
+      {discover.isLoading ? <Loading>Reading the rack</Loading> : null}
+      {discover.isError ? <Notice tone="error">Can't reach the rack.</Notice> : null}
 
-      {discover.data && events.length === 0 ? (
-        <p className="muted">
-          Nothing indexed yet. Events appear here once the indexer has caught up.
-        </p>
-      ) : null}
+      {discover.data && events.length === 0 ? <p className="muted">Rack's empty for now.</p> : null}
 
       {events.length > 0 ? (
         <ul className="data-list">
@@ -51,11 +44,11 @@ export const HomePage = () => {
           for a user who is in fact logged in. */}
       {me.isLoading ? null : me.data ? (
         <p>
-          <Link to="/events">See your own events</Link>
+          <Link to="/events">Open my shelf</Link>
         </p>
       ) : (
-        <Notice tone="info" title="Want to join in?">
-          <Link to="/login">Log in with your handle</Link> to create events and RSVP to others.
+        <Notice tone="info" title="Press start">
+          <Link to="/login">Link up</Link> to post events and send invites.
         </Notice>
       )}
     </Panel>

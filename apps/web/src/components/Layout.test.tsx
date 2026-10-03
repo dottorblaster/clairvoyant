@@ -20,9 +20,9 @@ describe('Layout', () => {
     renderRoutes(routes, { route: '/' })
 
     expect(screen.getByRole('navigation', { name: 'Main' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Discover' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'My events' })).toBeTruthy()
-    expect(await screen.findByRole('link', { name: 'Log in' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Game rack' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'My shelf' })).toBeTruthy()
+    expect(await screen.findByRole('link', { name: 'Link up' })).toBeTruthy()
   })
 
   test('shows the account and logs out', async () => {
@@ -38,7 +38,7 @@ describe('Layout', () => {
     renderRoutes(routes, { route: '/' })
 
     expect(await screen.findByText('viewer.test')).toBeTruthy()
-    fireEvent.click(screen.getByRole('button', { name: 'Log out' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Eject' }))
 
     expect(await screen.findByText('login content')).toBeTruthy()
     expect(calls.some((call) => call.url === '/oauth/logout' && call.init.method === 'POST')).toBe(

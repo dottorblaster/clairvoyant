@@ -25,7 +25,7 @@ describe('EventsPage', () => {
 
     renderWithProviders(<EventsPage />)
 
-    expect(await screen.findByText(/you are not logged in/i)).toBeTruthy()
+    expect(await screen.findByText(/browsing as a guest/i)).toBeTruthy()
   })
 
   test('groups events into upcoming, past and undated sections', async () => {
@@ -46,9 +46,9 @@ describe('EventsPage', () => {
 
     renderWithProviders(<EventsPage />)
 
-    expect(await screen.findByRole('heading', { name: 'Upcoming' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Up next' })).toBeTruthy()
     expect(screen.getByText('Soon')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Past' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Cleared' })).toBeTruthy()
     expect(screen.getByText('Old')).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'No date' })).toBeTruthy()
     expect(screen.getByText('Undated')).toBeTruthy()
@@ -61,7 +61,7 @@ describe('EventsPage', () => {
 
     renderWithProviders(<EventsPage />)
 
-    expect(await screen.findByText(/nothing yet/i)).toBeTruthy()
-    expect(screen.getByRole('link', { name: 'Create an event' })).toBeTruthy()
+    expect(await screen.findByText(/shelf is empty/i)).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Make an event' })).toBeTruthy()
   })
 })

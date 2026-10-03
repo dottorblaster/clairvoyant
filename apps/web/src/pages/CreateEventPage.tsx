@@ -55,25 +55,22 @@ export const CreateEventPage = () => {
 
   if (me.isLoading) {
     return (
-      <Panel title="Create event">
-        <Loading>Checking session</Loading>
+      <Panel title="New event">
+        <Loading>Checking your save</Loading>
       </Panel>
     )
   }
 
   if (!me.data) {
     return (
-      <Panel title="Create event">
-        <Notice tone="error">You need to log in before creating an event.</Notice>
+      <Panel title="New event">
+        <Notice tone="error">You need to link up before you can post an event.</Notice>
       </Panel>
     )
   }
 
   return (
-    <Panel
-      title="Create event"
-      meta="The record is written to your PDS. It appears here once the indexer observes it."
-    >
+    <Panel title="New event" meta="Saved to your own PDS.">
       <form onSubmit={onSubmit} className="stack">
         <TextField
           label="Name"
@@ -106,13 +103,11 @@ export const CreateEventPage = () => {
 
         <div className="cluster">
           <Button type="submit" variant="primary" pending={mutation.isPending}>
-            Create event
+            Post event
           </Button>
         </div>
 
-        {mutation.isError ? (
-          <Notice tone="error">Could not create the event. Please retry.</Notice>
-        ) : null}
+        {mutation.isError ? <Notice tone="error">Didn't take. Have another go.</Notice> : null}
       </form>
     </Panel>
   )

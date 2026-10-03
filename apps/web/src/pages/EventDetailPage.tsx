@@ -16,7 +16,7 @@ import { useMe } from '../lib/useMe'
 
 const BackLink = ({ toMyEvents }: { toMyEvents: boolean }) => (
   <Link to={toMyEvents ? '/events' : '/'}>
-    {toMyEvents ? 'Back to my events' : 'Back to discover'}
+    {toMyEvents ? 'Back to my shelf' : 'Back to the rack'}
   </Link>
 )
 
@@ -67,7 +67,7 @@ export const EventDetailPage = () => {
   if (!eventUri) {
     return (
       <Panel title="Event">
-        <Notice tone="error">This event link is malformed.</Notice>
+        <Notice tone="error">That link is broken.</Notice>
         <p>
           <BackLink toMyEvents={Boolean(me.data)} />
         </p>
@@ -86,7 +86,7 @@ export const EventDetailPage = () => {
   if (query.isError || !query.data) {
     return (
       <Panel title="Event">
-        <Notice tone="error">This event could not be found.</Notice>
+        <Notice tone="error">No event here.</Notice>
         <p>
           <BackLink toMyEvents={Boolean(me.data)} />
         </p>
@@ -103,26 +103,25 @@ export const EventDetailPage = () => {
     if (response) {
       return (
         <Notice tone="success">
-          Thanks — your RSVP was recorded as <strong>{RESPONSE_LABEL[response]}</strong>. It will
-          appear in the list once the indexer picks it up.
+          Your RSVP is in: <strong>{RESPONSE_LABEL[response]}</strong>.
         </Notice>
       )
     }
 
     if (!inviteToken) {
-      return <p className="muted">RSVP is invite-only. Ask someone to send you an invite link.</p>
+      return <p className="muted">RSVPs are invite-only. Someone has to send you a link.</p>
     }
 
     if (invite.isLoading) return <Loading>Checking invite</Loading>
 
     if (!info?.valid) {
-      return <Notice tone="error">This invite link is not valid.</Notice>
+      return <Notice tone="error">That invite didn't work.</Notice>
     }
 
     if (info.matchesViewer === false) {
       return (
         <Notice tone="error">
-          This invite is for @{info.inviteeHandle}. Log in as them to respond.
+          This invite is for @{info.inviteeHandle}. Link up as them to reply.
         </Notice>
       )
     }
@@ -130,7 +129,7 @@ export const EventDetailPage = () => {
     if (info.matchesViewer === null) {
       return (
         <form onSubmit={onLogin} className="stack">
-          <p>Log in with your handle to respond.</p>
+          <p>Link up to reply.</p>
           <TextField
             label="Your handle"
             value={handleInput || info.inviteeHandle || ''}
@@ -141,7 +140,7 @@ export const EventDetailPage = () => {
           />
           <div className="cluster">
             <Button type="submit" variant="primary">
-              Log in to respond
+              Link up to reply
             </Button>
           </div>
         </form>
@@ -153,7 +152,7 @@ export const EventDetailPage = () => {
     return (
       <div className="stack">
         <p>
-          Responding as <code>{me.data?.handle ?? me.data?.did}</code>.
+          Playing as <code>{me.data?.handle ?? me.data?.did}</code>.
         </p>
         <div className="cluster">
           <Button
@@ -162,22 +161,20 @@ export const EventDetailPage = () => {
             pending={respond.isPending}
             onClick={() => respond.mutate('going')}
           >
-            Accept
+            I'm in
           </Button>
           <Button
             icon="cross"
             pending={respond.isPending}
             onClick={() => respond.mutate('notgoing')}
           >
-            Decline
+            Can't go
           </Button>
           <Button pending={respond.isPending} onClick={() => respond.mutate('interested')}>
-            Interested
+            Maybe
           </Button>
         </div>
-        {respond.isError ? (
-          <Notice tone="error">Could not save your RSVP. Please retry.</Notice>
-        ) : null}
+        {respond.isError ? <Notice tone="error">RSVP didn't stick.</Notice> : null}
       </div>
     )
   }
@@ -223,9 +220,9 @@ export const EventDetailPage = () => {
       )}
 
       <section className="stack stack--tight">
-        <h2>RSVPs ({rsvps.length})</h2>
+        <h2>Who's in ({rsvps.length})</h2>
         {rsvps.length === 0 ? (
-          <p className="muted">No RSVPs yet.</p>
+          <p className="muted">No one's replied yet.</p>
         ) : (
           <ul className="data-list">
             {rsvps.map((rsvp) => (
@@ -241,7 +238,7 @@ export const EventDetailPage = () => {
       </section>
 
       <section className="stack stack--tight">
-        <h2>Your response</h2>
+        <h2>Your RSVP</h2>
         {renderResponse()}
       </section>
 

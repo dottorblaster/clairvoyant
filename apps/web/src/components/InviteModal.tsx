@@ -62,24 +62,22 @@ export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) 
             onChange={(event) => setHandle(event.target.value)}
             placeholder="alice.bsky.social"
             autoComplete="off"
-            hint="Resolved to a DID server-side, so the link only works for them."
+            hint="Only they can open the link."
             required
           />
 
           <div className="cluster">
             <Button type="submit" variant="primary" pending={create.isPending}>
-              Generate invite link
+              Make invite link
             </Button>
           </div>
 
-          {create.isError ? (
-            <Notice tone="error">Could not create the invite. Check the handle and retry.</Notice>
-          ) : null}
+          {create.isError ? <Notice tone="error">That handle didn't go through.</Notice> : null}
         </form>
       ) : (
         <div className="stack">
           <p>
-            Invite link for <strong>@{inviteeHandle}</strong>. Only they can use it to RSVP.
+            Invite for <strong>@{inviteeHandle}</strong>. Only they can open it.
           </p>
 
           <TextField
@@ -91,7 +89,7 @@ export const InviteModal = ({ eventUri, eventPath, onClose }: InviteModalProps) 
 
           <div className="cluster">
             <Button variant="primary" icon={copied ? 'check' : undefined} onClick={copy}>
-              {copied ? 'Copied' : 'Copy invite link'}
+              {copied ? 'Copied' : 'Copy link'}
             </Button>
             <Button onClick={reset}>Invite someone else</Button>
           </div>

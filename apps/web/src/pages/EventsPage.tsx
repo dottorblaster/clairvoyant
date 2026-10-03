@@ -44,18 +44,17 @@ export const EventsPage = () => {
 
   if (me.isLoading) {
     return (
-      <Panel title="My events">
-        <Loading>Checking session</Loading>
+      <Panel title="My shelf">
+        <Loading>Checking your save</Loading>
       </Panel>
     )
   }
 
   if (!me.data) {
     return (
-      <Panel title="My events">
+      <Panel title="My shelf">
         <p>
-          You are not logged in. <Link to="/login">Log in with your handle</Link> to see your
-          events.
+          You're browsing as a guest. <Link to="/login">Link up</Link> to see your shelf.
         </p>
       </Panel>
     )
@@ -67,26 +66,25 @@ export const EventsPage = () => {
 
   return (
     <Panel
-      title="My events"
+      title="My shelf"
       meta={
         <>
-          Everything you host or are attending, indexed from the network for{' '}
-          <code>{me.data.handle ?? me.data.did}</code>.
+          Hosting or attending, for <code>{me.data.handle ?? me.data.did}</code>.
         </>
       }
     >
-      {events.isLoading ? <Loading>Loading events</Loading> : null}
-      {events.isError ? <Notice tone="error">Could not load events.</Notice> : null}
+      {events.isLoading ? <Loading>Reading your shelf</Loading> : null}
+      {events.isError ? <Notice tone="error">Your shelf didn't load.</Notice> : null}
 
       {events.data && all.length === 0 ? (
         <p>
-          Nothing yet. <Link to="/create">Create an event</Link>, or find something on{' '}
-          <Link to="/">discover</Link>.
+          Your shelf is empty. <Link to="/create">Make an event</Link>, or hit{' '}
+          <Link to="/">the rack</Link>.
         </p>
       ) : null}
 
-      <Section title="Upcoming" events={upcoming} />
-      <Section title="Past" events={past} />
+      <Section title="Up next" events={upcoming} />
+      <Section title="Cleared" events={past} />
       <Section title="No date" events={undated} />
     </Panel>
   )

@@ -13,13 +13,13 @@ describe('App routing', () => {
     installFetchStub(stubs)
     renderRoutes(<App />, { route: '/' })
 
-    expect(await screen.findByRole('heading', { name: 'Discover' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Game rack' })).toBeTruthy()
   })
 
   test('renders a not-found page for an unknown route', async () => {
     installFetchStub(stubs)
     renderRoutes(<App />, { route: '/does-not-exist' })
 
-    expect(await screen.findByText('Page not found.')).toBeTruthy()
+    expect(await screen.findByText(/nothing here/i)).toBeTruthy()
   })
 })
